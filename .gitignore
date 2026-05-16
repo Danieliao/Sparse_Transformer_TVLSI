@@ -1,0 +1,17 @@
+# LaTeX compile artifacts at repo root (figure PDFs in subdirs are kept)
+/*.pdf
+/*.aux
+/*.bbl
+/*.blg
+/*.log
+/*.out
+/*.toc
+/*.fdb_latexmk
+/*.fls
+/*.synctex.gz
+/texput.log
+
+# Editor / OS
+.DS_Store
+*.swp
+*~

@@ -1,0 +1,32 @@
+% Generated from src/spec.xlsx; style modeled on src/summary.png (grid lines
+% with shaded left column for parameter names).
+\begin{table}[!t]
+    \caption{Measured silicon summary.}
+    \label{tab:summary}
+    \centering
+    \footnotesize
+    \setlength{\tabcolsep}{3pt}
+    \renewcommand{\arraystretch}{1.25}
+    \begin{tabular}{%
+        |>{\columncolor[gray]{0.92}\centering\arraybackslash}m{0.44\columnwidth}%
+        |>{\centering\arraybackslash}m{0.40\columnwidth}|}
+        \hline
+        \rowcolor[gray]{0.80}
+         & \textbf{Chip Summary} \\
+        \hline
+        \textbf{Technology} & TSMC 28\,nm \\ \hline
+        \textbf{Die area} & 9.26\,mm$^2$ \\ \hline
+        \textbf{On-chip SRAM} & 317\,KB \\ \hline
+        \textbf{PE config. ($N{\times}M{\times}P$)} & $8{\times}8{\times}8$ \\ \hline
+        \textbf{Supply voltage} & 0.75\,--\,1.10\,V \\ \hline
+        \textbf{Frequency} & 24\,--\,400\,MHz \\ \hline
+        \textbf{Precision} & INT8 \\ \hline
+        \textbf{Power} & 12.7\,--\,244.2\,mW \\ \hline
+        \textbf{Peak performance$^{1,2}$} & 1.634\,TOPS \\ \hline
+         & ViT-Base$^{4}$: 20.32\,TOPS/W \\ \cline{2-2}
+        \multirow{-2}{=}{\centering\textbf{Energy efficiency$^{2,3}$}}
+            & BERT-base$^{5}$: 21.93\,TOPS/W \\ \hline
+        \textbf{Area efficiency$^{1,2}$} & 0.176\,TOPS/mm$^2$ \\ \hline
+    \end{tabular}\\[2pt]
+    {\scriptsize $^{1}$\,at 1.10\,V, 400\,MHz; $^{2}$\,90\,\% model sparsity; $^{3}$\,at 0.77\,V, 183\,MHz; \\ $^{4}$\,ImageNet-1K; $^{5}$\,GLUE benchmark.}
+\end{table}
