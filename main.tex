@@ -73,6 +73,8 @@ Taken together, these forces distill the practical bottlenecks of transformer-ta
     \item \textbf{Non-linearity}: an on-chip approximation of softmax and layer normalization that preserves model accuracy while spending less power, area, and latency cost.
 \end{enumerate}
 
+Existing transformer accelerators meet these challenges only in part. The approximate-computing processor of~\cite{Yang2022isscc} and the early-exit processor of~\cite{Thierry2023isscc} both support unstructured sparsity and on-chip non-linear functions, but reach their headline efficiency only at an isolated operating point: \cite{Yang2022isscc} relies on approximate-computing speculation that assumes simultaneous input and weight sparsity, and \cite{Thierry2023isscc} couples entropy-based early exit with FP4/FP8 mixed precision, so neither figure reflects a model average across the heterogeneous GEMMs (\textbf{Challenges 1, 2}). \cite{Li2025SparseTrim} provides no on-chip non-linear function unit (\textbf{Challenge 4}), so softmax and layer normalization fall back to off-chip arithmetic and a full transformer cannot execute end-to-end. \cite{Fan2025MultiTaskTransformer} restricts sparsity to a block-wise structured pattern (\textbf{Challenge 3}), which constrains the pruning mask and therefore caps the attainable sparsity and accuracy relative to an unstructured scheme. No prior design satisfies all four challenges on a single fabric.
+
 To attack all four challenges within a single fabric, this paper presents a sparse transformer accelerator built around two co-designed compute primitives. The first is a row-wise matrix multiplication processing element (RMMPE) that executes every GEMM in the transformer in row-wise product form. Because the row-wise schedule is constrained by only one dimension of GEMMs, the same RMMPE handles the attention batched matrix multiplications (BMMs), projection layers, and feed-forward network (FFN) GEMMs with improved utilization compared to 2D architecture (\textbf{Challenges 1 and 2}). RMMPE further consumes inputs and weights in a row-wise run-length coding (RRLC) format, an extension of run-length coding to multi-row groups, that exposes arbitrary unstructured sparsity to the parallel MAC array (\textbf{Challenge 3}). The second primitive is a post-PE processor (PPE) that linearizes softmax through a six-entry exponential look-up and a leading-one-detect logarithm, and folds layer normalization into the per-row quantization scale of a precomputed running feature statistic (\textbf{Challenge 4}).
 
 This article extends our previous conference paper~\cite{Liao2024SparseTransformer} with deeper design choice analysis and replaces the simulation result by the silicon experiment result. The remainder is organized as follows: Section~\ref{sec:algo} develops the algorithm/hardware co-design, Section~\ref{sec:arch} details the accelerator architecture, Section~\ref{sec:results} reports the silicon-measured results and cross-model benchmarks, and Section~\ref{sec:conclusion} concludes the paper.
@@ -224,7 +226,7 @@ Every multiplier owns a private bank of Accumulator Memory. When MAC for a tile 
 % Because the row-wise schedule consumes every weight tile across the entire chain before moving on, the RMMPE stores activations stationary in its local Input Memory and lets weights stream: duplicating weights per PE would be wasteful, while reusing one activation tile across multiple weight tiles is exactly the row-wise reuse pattern.
 
 The same multiplier array supports a second scheduling mode at no hardware cost. In the aforementioned row-wise mode, %just described, 
-the activations are stationary in Input Memory and the weights stream through the chain; the stationary tile dimension is the $M{\cdot}P$ output rows produced in parallel, and the column dimension of the output is iterated address-by-address across Accumulator Memory. In the \emph{column-wise} mode, the roles are flipped: weights are loaded stationary into Input Memory (the same SRAM bank, written through the same RRLC decoder), activations stream through the chain, and the stationary tile dimension becomes the $M{\cdot}P$ output \emph{columns} produced in parallel while the output row dimension is iterated. 
+the activations are stationary in Input Memory and the weights stream through the chain; the stationary tile dimension is the $M{\cdot}P$ output rows produced in parallel, and the column dimension of the output is iterated address-by-address across Accumulator Memory. In the \emph{column-wise} mode, the roles are flipped: weights are loaded stationary into Input Memory (the same SRAM bank, written through the same RRLC decoder), activations stream through the chain, and the stationary tile dimension becomes the $M{\cdot}P$ output \emph{columns} produced in parallel. 
 The RRLC \textit{Run}'s pointer memory remains the indexing mechanism and the multiplier array, Accumulator Memory, adder tree, and PPE all run unchanged; only the operand identity at each Input Memory port is swapped. This column-wise mode is useful for gaining speedup while input sparsity is more intense, which happens at the post-softmax matrix multiplication between attention score and value matrix~\cite{RTA2025TVLSI}. Another architectural advantage is \emph{one-dimensional dataflow constraint}. In the row-wise mode, only the $M{\cdot}P$ output rows produced in parallel need to align with the row count of the input matrix to reach $100\%$ utilization, and the column dimension of either the input or the weight is iterated freely with no boundary tax. In the column-wise mode, the same $M{\cdot}P$ aligns instead with the column count of the weight matrix, with the row dimension iterated freely. The architecture needs only \emph{one} workload axis to land cleanly on the $M{\cdot}P$ tile (either input rows or weight columns, whichever fits). A square systolic array of shape $S_{r}{\times}S_{c}$ instead enforces \emph{both} constraints simultaneously: input rows must be a multiple of $S_{r}$ \emph{and} weight columns a multiple of $S_{c}$.
 
 \subsection{PPE}
@@ -280,10 +282,14 @@ Here $\delta_{\ell} \ge 0$ is the constant that the downstream \emph{sum} and \e
 
 Once \emph{sum} completes, the purple \textbf{ln} block computes $\ln \Sigma$ in Eq.~\eqref{eq:softmax} by the approximation of~\cite{meiqi2018softmax},
 \begin{equation}
-    \ln \Sigma = \ln 2 \cdot \log_{2} \Sigma = \ln 2 \cdot (w + \log_{2} k),
-    \label{eq:loge}
+\begin{aligned}
+    \Sigma      &= 2^{w} \cdot k, \qquad k \in [1, 2), \\
+    \ln \Sigma  &= \ln 2 \cdot \log_{2} \Sigma = \ln 2 \cdot (w + \log_{2} k) \\
+                &\approx \ln 2 \cdot (w + k - 1).
+\end{aligned}
+\label{eq:loge}
 \end{equation}
-with $\Sigma = 2^{w} k$ and $\log_{2} k$ taken as $k{-}1$ on $[1, 2)$. A leading-one detector (LOD) yields the integer part $w$; a $-1$ adder folds the mantissa $k$ to $k{-}1$, which is then multiplied by $\ln 2$ to produce the natural logarithm.
+Since $k \in [1, 2)$, the last line applies the Mitchell approximation $\log_{2} k \approx k - 1$ on $[1, 2)$. In hardware, a leading-one detector (LOD) extracts $w$; a $-1$ adder folds the mantissa $k$ to $k{-}1$, which is then multiplied by $\ln 2$ to produce the natural logarithm.
 
 \emph{Second Softmax Memory drain (minus and exp).} The second Softmax Memory drain re-streams the stored differences. For each entry $i$, the blue \textbf{minus} block forms the full argument of the outermost exponential in Eq.~\eqref{eq:softmax}, $X_i - X_{\max} - \ln \Sigma$, by subtracting $\ln \Sigma$ from the Softmax Memory value (after the per-segment offset $\delta_{\ell}$). The green \textbf{exp} block then evaluates
 \begin{equation}
@@ -340,13 +346,6 @@ The PPE approximates every non-linear function with multiplications, additions, 
 % The softmax mode is the only mode whose schedule departs from the load--stream--drain template, because the baseline two-pass softmax requires Accumulator Memory to be drained twice: once to extract $X_{\max}$ and once to compute $X_{i}{-}X_{\max}$. Section~\ref{sec:arch-lsoft} eliminates the second pass via a tile-fused running-max / log-sum-exp recurrence, simplifying the scheduler back to one drain even for softmax.
 
 % =========================================================================
-\section{Silicon Implementation and Results}
-\label{sec:results}
-
-We prototyped the propsoed sparse transformer accelerator in TSMC~28\,nm CMOS, which employs the~$8{\times}8{\times}8$ configuration for $N{\times}M{\times}P$. This section reports the measured silicon characterization, the per-model sparsity impact on speedup, on-chip energy, weight external memory access (EMA), the on-chip non-linear-function linearization gain, the flexibility/scalability comparison against a 2D systolic array baseline, and a comparison with prior transformer accelerators.
-
-\subsection{Die Micrograph and Measurement}
-\label{sec:results-die}
 
 \begin{figure}[!t]
     \centering
@@ -364,6 +363,14 @@ We prototyped the propsoed sparse transformer accelerator in TSMC~28\,nm CMOS, w
     \vspace{-10pt}
     \label{fig:setup}
 \end{figure}
+
+\section{Silicon Implementation and Results}
+\label{sec:results}
+
+We prototyped the propsoed sparse transformer accelerator in TSMC~28\,nm CMOS, which employs the~$8{\times}8{\times}8$ configuration for $N{\times}M{\times}P$. This section reports the measured silicon characterization, the per-model sparsity impact on speedup, on-chip energy, weight external memory access (EMA), the on-chip non-linear-function linearization gain, the flexibility/scalability comparison against a 2D systolic array baseline, and a comparison with prior transformer accelerators.
+
+\subsection{Die Micrograph and Measurement}
+\label{sec:results-die}
 
 \input{tables/vi_a_summary.tex}
 
@@ -417,7 +424,7 @@ A furthur evaluation of the sparisty impact on the on-chip execution of ViT-Smal
     \label{fig:sparsity-energy}
 \end{figure}
 
-Fig.~\ref{fig:sparsity-energy}(a) shows that the overall model speedup rises monotonically with sparsity for every model, reaching $5.07\times$ on ViT-Small, $6.09\times$ on ViT-Base, and $6.57\times$ on BERT-base at $90\%$ sparsity. The speedup is highest for the model whose weighted FLOPs fraction is largest, because attention relevant matrix multiplication passing through unsparsified. ViT-Small carries $7.9\%$ of its per-block FLOPs in those unsparsified operations (the smaller hidden dimension $H{=}384$ leaves less compute in the four weighted GEMMs), versus $4.1\%$ for ViT-Base and only $2.7\%$ for BERT-base whose shorter sequence shrinks the attention contribution. Consequently, As shown in Fig.~\ref{fig:sparsity-energy}(a), the speedup is highest for BERT-base, followed by ViT-Base and ViT-Small models.
+Fig.~\ref{fig:sparsity-energy}(a) shows that the overall model speedup rises monotonically with sparsity for every model, reaching $5.07\times$ on ViT-Small, $6.09\times$ on ViT-Base, and $6.57\times$ on BERT-base at $90\%$ sparsity. The speedup is highest for the model with the largest sparsifiable (FFN) FLOPs fraction, because the attention matrix multiplications $Q\!\cdot\!K^{\top}$ and $A\!\cdot\!V$ have no weight matrix and pass through unsparsified, forming a fixed floor that caps the attainable speedup. ViT-Small carries $7.9\%$ of its per-block FLOPs in those unsparsified operations (the smaller hidden dimension $H{=}384$ leaves less compute in the four weighted GEMMs), versus $4.1\%$ for ViT-Base and only $2.7\%$ for BERT-base whose shorter sequence shrinks the attention contribution. Consequently, As shown in Fig.~\ref{fig:sparsity-energy}(a), the speedup is highest for BERT-base, followed by ViT-Base and ViT-Small models.
 %the speedup orders BERT-base, ViT-Base, and ViT-Small in Fig.~\ref{fig:sparsity-energy}(a). 
 Above $87.5\%$ sparsity, the mean gap between non-zeros ($=s/(1{-}s)$) %first 
 exceeds the 3-bit \textit{Run} cap of $7$, and the encoder must insert placeholder \textit{Run}${=}7$ tuples to bridge longer runs. The padding factor (tuples consumed per real non-zero) reaches $9/7 \approx 1.29\times$ at $90\%$ sparsity, which divides the ideal sparsity saving by $1.29$ and clips the FLOPs reduction by $1 - 1/1.29 \approx 22\%$ on the weighted ops. The absolute speedup at $90\%$ sparsity still grows monotonically from the $80\%$ bar, but falls roughly a factor of two short of the ideal $1/(1{-}s) = 10\times$ that a padding-free encoding would deliver.
@@ -455,18 +462,13 @@ The RMMPE imposes a \emph{one-dimensional} alignment constraint on the workload:
 \begin{figure}[!t]
     \centering
     \includegraphics[width=\columnwidth]{figures_analysis/flexibility_scalability.pdf}
+    \vspace{-20pt}
     \caption{Flexibility and scalability against a square systolic array baseline on ViT-Base. (a)~Per-operator MAC utilization at $512$ multipliers. (b)~Workload-FLOPs-weighted utilization at five matched multiplier budgets.}
+    \vspace{-10pt}
     \label{fig:flex-scale}
 \end{figure}
 
 \subsubsection{Per-operator flexibility} Fig.~\ref{fig:flex-scale}(a) compares three $512$-multiplier configurations at the operator level: a $16{\times}32$ rectangular systolic array (2D-constrained baseline); an RMMPE shaped $N{=}16$, $M{=}8$, $P{=}4$ (tile $M{\cdot}P{=}32$, $K_{\text{para}}{=}16$), chosen to share the systolic array's $16{\times}32$ outer shape for a fair-multiplier-budget comparison; and the prototype's own $8{\times}8{\times}8$ configuration (tile $M{\cdot}P{=}64$, $K_{\text{para}}{=}8$). In the two RMMPE configurations the numbers play different roles than they do for the systolic array: only the spatial tile $32$ (or $64$) is an output-axis constraint, while the second number is the inner-K constraint that all ViT-Base inner dimensions $\{H, F, d\}$ satisfy. The matched-budget RMMPE reaches $100\%$ on five of the six operators and $94.7\%$ on $AV$ where the inner-K constraint $K{=}L{=}197$ does not divide $N{=}16$; the chip's $8{\times}8{\times}8$ configuration relaxes the inner-K to $N{=}8$ and lifts $AV$ to $98.5\%$ at no cost on the other operators. The $16{\times}32$ systolic array, by contrast, pays its $16$-row tax on every operator with $M{=}L{=}197$ (pinning the four linear GEMMs at $94.7\%$) and an additional $32$-column tax on $QK^{\top}$ ($87.8\%$).
-
-\subsubsection{Scalability} Fig.~\ref{fig:flex-scale}(b) sweeps the multiplier budget from $256$ to $16{,}384$ at matched configurations. At each budget the first dimension of the systolic array ($S_r$) and the first dimension of the RMMPE ($N$) are held equal to a common value $S$, and the remaining axes ($S_c$ for the systolic array, $M{\cdot}P$ for the RMMPE) are sized to fill the same total multiplier count; this keeps the two designs on equal footing and isolates the effect of the 2D vs.~1D alignment constraint. The RMMPE recovers the spatial mismatch that costs the systolic array increasingly more multipliers as $S$ grows: at $S{=}16$ ($256$ muls) the systolic array loses about $5$\,pp on the $M{=}L{=}197$ axis, and the gap widens to $+11.6$\,pp at $1024$ multipliers (systolic array $32{\times}32$ rounds both axes against $L{=}197$, RMMPE applies the $32$ only where it fits) and $+22.1$\,pp at $4096$ multipliers ($64{\times}64$ systolic array crosses $L{=}197$ and incurs the row-tile boundary on the four GEMMs simultaneously, while the RMMPE uses column-wise to align the $64$ with the $H$, $F$ axes that are multiples of $64$). At $16{,}384$ multipliers, the matched RMMPE has $N{=}128$, and the inner-K constraint $K{=}d{=}64{<}N$ now costs $50\%$ on $QK^{\top}$; nevertheless the workload-weighted utilization remains $98\%$ versus the systolic array's $76\%$, because $QK^{\top}$ accounts for only $2\%$ of the per-block FLOPs.
-
-The architecture-level constraint reduction translates directly into measured throughput. The systolic array baseline must pay for two simultaneous alignments per operator and runs out of headroom on ViT-Base at $1,024$ multipliers; the RMMPE pays for one, picks the favorable axis per operator via mode selection, and only begins to see a comparable tax at $16{,}384$ multipliers and then only on the operator whose inner dimension is smaller than the multiplier-budget-driven $K_{\text{para}}$. A further asymmetry favors the RMMPE on sparse workloads: row-wise mode accelerates compute by skipping zero-weight multiplications via the RRLC \textit{Run} pointer, and column-wise mode (with weights stationary) cannot skip the multiplications with zeros in weight, but still benefits from the compressed weight EMA off-chip and from activation sparsity aware frameworks~\cite{Tang2024QUEST}. A 2D systolic array gains no advantage from either form of sparsity. The flexibility/scalability advantage therefore compounds with the sparsity benefit at every multiplier budget studied here, with the gap widest at the largest budgets.
-
-\subsection{Comparison with State-of-the-Art Accelerators}
-\label{sec:results-comp}
 
 \begin{table*}[!t]
     \caption{Comparison with prior sparse transformer accelerators.}
@@ -503,8 +505,15 @@ The architecture-level constraint reduction translates directly into measured th
         \textbf{Peak area eff. (TOPS/mm$^{2}$)}  & 4.04            & 0.0798           & --               & 0.159              & 0.176 \\ \hline
     \end{tabular}\\[2pt]
     {\scriptsize $^{1}$\,matmul with 90\,\% sparsity on both input and weight;\quad $^{2}$\,matmul with 50\,\% input sparsity; \\ \quad $^{3}$\,matmul with 87.5\,\% weight sparsity; \quad $^{4}$\,model average with 90\,\% weight sparsity.}
-    \vspace{-5pt}
+    \vspace{-15pt}
 \end{table*}
+
+\subsubsection{Scalability} Fig.~\ref{fig:flex-scale}(b) sweeps the multiplier budget from $256$ to $16{,}384$ at matched configurations. At each budget the first dimension of the systolic array ($S_r$) and the first dimension of the RMMPE ($N$) are held equal to a common value $S$, and the remaining axes ($S_c$ for the systolic array, $M{\cdot}P$ for the RMMPE) are sized to fill the same total multiplier count; this keeps the two designs on equal footing and isolates the effect of the 2D vs.~1D alignment constraint. The RMMPE recovers the spatial mismatch that costs the systolic array increasingly more multipliers as $S$ grows: at $S{=}16$ ($256$ muls) the systolic array loses about $5$\,pp on the $M{=}L{=}197$ axis, and the gap widens to $+11.6$\,pp at $1024$ multipliers (systolic array $32{\times}32$ rounds both axes against $L{=}197$, RMMPE applies the $32$ only where it fits) and $+22.1$\,pp at $4096$ multipliers ($64{\times}64$ systolic array crosses $L{=}197$ and incurs the row-tile boundary on the four GEMMs simultaneously, while the RMMPE uses column-wise to align the $64$ with the $H$, $F$ axes that are multiples of $64$). At $16{,}384$ multipliers, the matched RMMPE has $N{=}128$, and the inner-K constraint $K{=}d{=}64{<}N$ now costs $50\%$ on $QK^{\top}$; nevertheless the workload-weighted utilization remains $98\%$ versus the systolic array's $76\%$, because $QK^{\top}$ accounts for only $2\%$ of the per-block FLOPs.
+
+The architecture-level constraint reduction translates directly into measured throughput. The systolic array baseline must pay for two simultaneous alignments per operator and runs out of headroom on ViT-Base at $1,024$ multipliers; the RMMPE pays for one, picks the favorable axis per operator via mode selection, and only begins to see a comparable tax at $16{,}384$ multipliers and then only on the operator whose inner dimension is smaller than the multiplier-budget-driven $K_{\text{para}}$. A further asymmetry favors the RMMPE on sparse workloads: row-wise mode accelerates compute by skipping zero-weight multiplications via the RRLC \textit{Run} pointer, and column-wise mode (with weights stationary) cannot skip the multiplications with zeros in weight, but still benefits from the compressed weight EMA off-chip and from activation sparsity aware frameworks~\cite{Tang2024QUEST}. A 2D systolic array gains no advantage from either form of sparsity. The flexibility/scalability advantage therefore compounds with the sparsity benefit at every multiplier budget studied here, with the gap widest at the largest budgets.
+
+\subsection{Comparison with State-of-the-Art Accelerators}
+\label{sec:results-comp}
 
 Table~\ref{tab:comparison} compares our chip against four recent transformer accelerators~\cite{Yang2022isscc, Thierry2023isscc, Li2025SparseTrim, Fan2025MultiTaskTransformer}.
 %accelerator~1 (ISSCC'22~\cite{Yang2022isscc}), accelerator~2 (ISSCC'23~\cite{Thierry2023isscc}), accelerator~3 (CICC'25~\cite{Li2025SparseTrim}), and accelerator~4 (VLSI'25~\cite{Fan2025MultiTaskTransformer}). 
