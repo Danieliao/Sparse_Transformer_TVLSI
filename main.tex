@@ -278,7 +278,7 @@ Here $\delta_{\ell} \ge 0$ is the constant that the downstream \emph{sum} and \e
 
 \emph{First Softmax Memory drain (sum and ln).} Once the whole row has been written to Softmax Memory and $X_{\max}$ has been resolved across segments, Softmax Memory is drained into the yellow \textbf{sum} block. Each entry indexes the six-element exponential LUT that stores $e^{-1},\dots,e^{-6}$, exactly the bins that cover the effective region of Fig.~\ref{fig:softmax}(a). After the per-segment offset $\delta_{\ell}$ is added so that the LUT argument is $X_i - X_{\max}$ in the global reference frame. The LUT output enters an adder that accumulates the global denominator $\Sigma = \sum_i \exp(X_i - X_{\max})$ in a single register shown at the top right of Fig.~\ref{fig:softmax}(b).
 
-Once \emph{sum} completes, the purple \textbf{ln} block computes $\ln \Sigma$ in Eq.~\eqref{eq:softmax} by the approximation of~\cite{meiqi2018softmax},
+Once \emph{sum} completes, the purple \textbf{ln} block computes $\ln \Sigma$ by the approximation of~\cite{meiqi2018softmax},
 \begin{equation}
     \ln \Sigma = \ln 2 \cdot \log_{2} \Sigma = \ln 2 \cdot (w + \log_{2} k),
     \label{eq:loge}
