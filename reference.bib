@@ -1,10 +1,9 @@
 @inproceedings{zhang2022platon,
-  title={PLATON: Pruning Large Transformer Models with Upper Confidence Bound of Weight Importance},
+  title={{PLATON: Pruning Large Transformer Models with Upper Confidence Bound of Weight Importance}},
   author={Zhang, Qingru and Zuo, Simiao and Liang, Chen and Bukharin, Alexander and He, Pengcheng and Chen, Weizhu and Zhao, Tuo},
-  booktitle={International Conference on Machine Learning},
+  booktitle={International Conference on Machine Learning (ICML)},
   pages={26809--26823},
   year={2022},
-  organization={PMLR}
 }
 
 @inproceedings{tom2020gpt3,
@@ -24,17 +23,12 @@ series = {NIPS '20}
 
 @inproceedings{Ashish2017attention,
 author = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N. and Kaiser, \L{}ukasz and Polosukhin, Illia},
-title = {Attention is all you need},
+title = {{Attention is All You Need}},
 year = {2017},
 isbn = {9781510860964},
-publisher = {Curran Associates Inc.},
-address = {Red Hook, NY, USA},
 abstract = {The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best results, including ensembles, by over 2 BLEU. On the WMT 2014 English-to-French translation task, our model establishes a new single-model state-of-the-art BLEU score of 41.0 after training for 3.5 days on eight GPUs, a small fraction of the training costs of the best models from the literature.},
-booktitle = {Proceedings of the 31st International Conference on Neural Information Processing Systems},
+booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
 pages = {6000-6010},
-numpages = {11},
-location = {Long Beach, California, USA},
-series = {NIPS'17}
 }
 
 @inproceedings{Nicolas2020DETR,
@@ -77,19 +71,16 @@ location = {Glasgow, United Kingdom}
 
   @inproceedings{Eunji2023TF-MVP,
 author = {Yoo, Eunji and Park, Gunho and Min, Jung Gyu and Kwon, Se Jung and Park, Baeseong and Lee, Dongsoo and Lee, Youngjoo},
-title = {TF-MVP: Novel Sparsity-Aware Transformer Accelerator with Mixed-Length Vector Pruning},
+title = {{TF-MVP: Novel Sparsity-Aware Transformer Accelerator with Mixed-Length Vector Pruning}},
 year = {2025},
 isbn = {9798350323481},
-publisher = {IEEE Press},
 url = {https://doi.org/10.1109/DAC56929.2023.10247799},
 doi = {10.1109/DAC56929.2023.10247799},
 abstract = {We present the energy-efficient TF-MVP architecture, a sparsity-aware transformer accelerator, by introducing novel algorithm-hardware co-optimization techniques. From the previous fine-grained pruning map, for the first time, the direction strength is developed to analyze the pruning patterns quantitatively, indicating the major pruning direction and size of each layer. Then, the mixed-length vector pruning (MVP) is proposed to generate the hardware-friendly pruned-transformer model, which is fully supported by our TF-MVP accelerator with the reconfigurable PE structure. Implemented in a 28nm CMOS technology, as a result, TF-MVP achieves 377 GOPs/W for accelerating GPT-2 small model by realizing 4096 multiply-accumulate operators, which is 2.09 times better than the state-of-the-art sparsity-aware transformer accelerator.},
-booktitle = {Proceedings of the 60th Annual ACM/IEEE Design Automation Conference},
+booktitle = {ACM/IEEE Design Automation Conference (DAC)},
 pages = {1-6},
 numpages = {6},
 keywords = {algorithm-hardware co-optimization, model compression, sparsity-aware transformer accelerator},
-location = {San Francisco, California, United States},
-series = {DAC '23}
 }
 
 @inproceedings{Guan2022SALO,
@@ -97,16 +88,12 @@ author = {Shen, Guan and Zhao, Jieru and Chen, Quan and Leng, Jingwen and Li, Ch
 title = {SALO: an efficient spatial accelerator enabling hybrid sparse attention mechanisms for long sequences},
 year = {2022},
 isbn = {9781450391429},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA},
 url = {https://doi.org/10.1145/3489517.3530504},
 doi = {10.1145/3489517.3530504},
 abstract = {The attention mechanisms of transformers effectively extract pertinent information from the input sequence. However, the quadratic complexity of self-attention w.r.t the sequence length incurs heavy computational and memory burdens, especially for tasks with long sequences. Existing accelerators face performance degradation in these tasks. To this end, we propose SALO to enable hybrid sparse attention mechanisms for long sequences. SALO contains a data scheduler to map hybrid sparse attention patterns onto hardware and a spatial accelerator to perform the efficient attention computation. We show that SALO achieves 17.66x and 89.33x speedup on average compared to GPU and CPU implementations, respectively, on typical workloads, i.e., Longformer and ViL.},
-booktitle = {Proceedings of the 59th ACM/IEEE Design Automation Conference},
+booktitle = {ACM/IEEE Design Automation Conference (DAC)},
 pages = {571-576},
 numpages = {6},
-location = {San Francisco, California},
-series = {DAC '22}
 }
 
 @inproceedings{Liqiang2021Sanger,
@@ -114,56 +101,43 @@ author = {Lu, Liqiang and Jin, Yicheng and Bi, Hangrui and Luo, Zizhang and Li, 
 title = {Sanger: A Co-Design Framework for Enabling Sparse Attention using Reconfigurable Architecture},
 year = {2021},
 isbn = {9781450385572},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA},
 url = {https://doi.org/10.1145/3466752.3480125},
 doi = {10.1145/3466752.3480125},
 abstract = {In recent years, attention-based models have achieved impressive performance in natural language processing and computer vision applications by effectively capturing contextual knowledge from the entire sequence. However, the attention mechanism inherently contains a large number of redundant connections, imposing a heavy computational burden on model deployment. To this end, sparse attention has emerged as an attractive approach to reduce the computation and memory footprint, which involves the sampled dense-dense matrix multiplication (SDDMM) and sparse-dense matrix multiplication (SpMM) at the same time, thus requiring the hardware to eliminate zero-valued operations effectively. Existing techniques based on irregular sparse patterns or regular but coarse-grained patterns lead to low hardware efficiency or less computation saving. This paper proposes Sanger, a framework that harvests sparsity in the attention mechanism through synergistic hardware and software co-design. The software part prunes the attention matrix into a dynamic structured pattern, and the hardware part features a reconfigurable architecture that exploits such patterns. Specifically, we dynamically sparsify vanilla attention based on a quantized prediction of the attention matrix. Then, the sparse mask is re-arranged into structured blocks that are more amenable to hardware implementation. The hardware design of Sanger features a score-stationary dataflow that keeps sparse scores stationary in the PE to avoid decoding overhead. Using this dataflow and a reconfigurable systolic array design, we can unify the computation of SDDMM and SpMM operations. Typically, the PEs can be configured during runtime to support different data access and partial sum accumulation schemes. Experiments on BERT show that Sanger can prune the model to 0.08 - 0.27 sparsity without accuracy loss, achieving 4.64X, 22.7X, 2.39X, and 1.47X speedup compared to V100 GPU, AMD Ryzen Threadripper 3970X CPU, as well as the state-of-the-art attention accelerators A3 and SpAtten.},
-booktitle = {MICRO-54: 54th Annual IEEE/ACM International Symposium on Microarchitecture},
+booktitle = {IEEE/ACM International Symposium on Microarchitecture (MICRO)},
 pages = {977-991},
 numpages = {15},
 keywords = {systolic array, sparse, reconfigurable architecture, hardware-software co-design, attention, Transformer},
 location = {Virtual Event, Greece},
-series = {MICRO '21}
 }
 
 @INPROCEEDINGS{Yang2022isscc,
   author={Wang, Yang and Qin, Yubin and Deng, Dazheng and Wei, Jingchuan and Zhou, Yang and Fan, Yuanqi and Chen, Tianbao and Sun, Hao and Liu, Leibo and Wei, Shaojun and Yin, Shouyi},
-  booktitle={2022 IEEE International Solid-State Circuits Conference (ISSCC)}, 
+  booktitle={IEEE International Solid-State Circuits Conference (ISSCC)}, 
   title={A 28nm 27.5TOPS/W Approximate-Computing-Based Transformer Processor with Asymptotic Sparsity Speculating and Out-of-Order Computing}, 
   year={2022},
-  volume={65},
   number={},
   pages={1-3},
   keywords={Out of order;Correlation;Computational modeling;Conferences;Transformers;Integrated circuit modeling;Artificial intelligence},
   doi={10.1109/ISSCC42614.2022.9731686}}
 
 @inproceedings{dosovitskiy2021image,
-title={An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale},
+title={{An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale}},
 author={Alexey Dosovitskiy and Lucas Beyer and Alexander Kolesnikov and Dirk Weissenborn and Xiaohua Zhai and Thomas Unterthiner and Mostafa Dehghani and Matthias Minderer and Georg Heigold and Sylvain Gelly and Jakob Uszkoreit and Neil Houlsby},
-booktitle={International Conference on Learning Representations},
+booktitle={International Conference on Learning Representations (ICLR)},
 year={2021},
-url={https://openreview.net/forum?id=YicbFdNTTy}
 }
 
 @inproceedings{Jacob2019bert,
-    title = "{BERT}: Pre-training of Deep Bidirectional Transformers for Language Understanding",
+    title = {{BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding}},
     author = "Devlin, Jacob  and
       Chang, Ming-Wei  and
       Lee, Kenton  and
       Toutanova, Kristina",
-    editor = "Burstein, Jill  and
-      Doran, Christy  and
-      Solorio, Thamar",
-    booktitle = "Proceedings of the 2019 Conference of the North {A}merican Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Papers)",
-    month = jun,
+    booktitle = "Conference of the North {A}merican Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Papers)",
     year = "2019",
-    address = "Minneapolis, Minnesota",
-    publisher = "Association for Computational Linguistics",
-    url = "https://aclanthology.org/N19-1423/",
     doi = "10.18653/v1/N19-1423",
     pages = "4171--4186",
-    abstract = "We introduce a new language representation model called BERT, which stands for Bidirectional Encoder Representations from Transformers. Unlike recent language representation models (Peters et al., 2018a; Radford et al., 2018), BERT is designed to pre-train deep bidirectional representations from unlabeled text by jointly conditioning on both left and right context in all layers. As a result, the pre-trained BERT model can be fine-tuned with just one additional output layer to create state-of-the-art models for a wide range of tasks, such as question answering and language inference, without substantial task-specific architecture modifications. BERT is conceptually simple and empirically powerful. It obtains new state-of-the-art results on eleven natural language processing tasks, including pushing the GLUE score to 80.5 (7.7 point absolute improvement), MultiNLI accuracy to 86.7{\%} (4.6{\%} absolute improvement), SQuAD v1.1 question answering Test F1 to 93.2 (1.5 point absolute improvement) and SQuAD v2.0 Test F1 to 83.1 (5.1 point absolute improvement)."
 }
 
 @inproceedings{Jacob2021softermax,
@@ -215,8 +189,8 @@ month =Jun}
 
 @INPROCEEDINGS{Hanrui2021SpAtten,
   author={Wang, Hanrui and Zhang, Zhekai and Han, Song},
-  booktitle={2021 IEEE International Symposium on High-Performance Computer Architecture (HPCA)}, 
-  title={SpAtten: Efficient Sparse Attention Architecture with Cascade Token and Head Pruning}, 
+  booktitle={IEEE International Symposium on High-Performance Computer Architecture (HPCA)}, 
+  title={{SpAtten: Efficient Sparse Attention Architecture with Cascade Token and Head Pruning}}, 
   year={2021},
   volume={},
   number={},
@@ -266,7 +240,7 @@ series = {DAC '22}
 
   @INPROCEEDINGS{Thierry2023isscc,
   author={Tambe, Thierry and Zhang, Jeff and Hooper, Coleman and Jia, Tianyu and Whatmough, Paul N. and Zuckerman, Joseph and Santos, Maico Cassel Dos and Loscalzo, Erik Jens and Giri, Davide and Shepard, Kenneth and Carloni, Luca and Rush, Alexander and Brooks, David and Wei, Gu-Yeon},
-  booktitle={2023 IEEE International Solid-State Circuits Conference (ISSCC)}, 
+  booktitle={IEEE International Solid-State Circuits Conference (ISSCC)}, 
   title={22.9 A 12nm 18.1TFLOPs/W Sparse Transformer Processor with Entropy-Based Early Exit, Mixed-Precision Predication and Fine-Grained Power Management}, 
   year={2023},
   volume={},
@@ -277,16 +251,10 @@ series = {DAC '22}
 
 @inproceedings{liu2021sparse,
 author = {Liu, Shiwei and Chen, Tianlong and Chen, Xiaohan and Atashgahi, Zahra and Yin, Lu and Kou, Huanyu and Shen, Li and Pechenizkiy, Mykola and Wang, Zhangyang and Mocanu, Decebal Constantin},
-title = {Sparse training via boosting pruning plasticity with neuroregeneration},
+title = {{Sparse Training via Boosting Pruning Plasticity with Neuroregeneration}},
 year = {2021},
 isbn = {9781713845393},
-publisher = {Curran Associates Inc.},
-address = {Red Hook, NY, USA},
-abstract = {Works on lottery ticket hypothesis (LTH) and single-shot network pruning (SNIP) have raised a lot of attention currently on post-training pruning (iterative magnitude pruning), and before-training pruning (pruning at initialization). The former method suffers from an extremely large computation cost and the latter usually struggles with insufficient performance. In comparison, during-training pruning, a class of pruning methods that simultaneously enjoys the training/inference efficiency and the comparable performance, temporarily, has been less explored. To better understand during-training pruning, we quantitatively study the effect of pruning throughout training from the perspective of pruning plasticity (the ability of the pruned networks to recover the original performance). Pruning plasticity can help explain several other empirical observations about neural network pruning in literature. We further find that pruning plasticity can be substantially improved by injecting a brain-inspired mechanism called neuroregeneration, i.e., to regenerate the same number of connections as pruned. We design a novel gradual magnitude pruning (GMP) method, named gradual pruning with zero-cost neuroregeneration (GraNet), that advances state of the art. Perhaps most impressively, its sparse-to-sparse version for the first time boosts the sparse-to-sparse training performance over various dense-to-sparse methods with ResNet-50 on ImageNet without extending the training time.},
-booktitle = {Proceedings of the 35th International Conference on Neural Information Processing Systems},
-articleno = {758},
-numpages = {15},
-series = {NIPS '21}
+booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
 }
 
 @article{gustavson1978,
@@ -309,7 +277,7 @@ numpages = {20}
 
 @INPROCEEDINGS{Ham2020A3,
   author={Ham, Tae Jun and Jung, Sung Jun and Kim, Seonghak and Oh, Young H. and Park, Yeonhong and Song, Yoonho and Park, Jung-Hun and Lee, Sanghee and Park, Kyoung and Lee, Jae W. and Jeong, Deog-Kyoon},
-  booktitle={2020 IEEE International Symposium on High Performance Computer Architecture (HPCA)}, 
+  booktitle={IEEE International Symposium on High Performance Computer Architecture (HPCA)}, 
   title={A3: Accelerating Attention Mechanisms in Neural Networks with Approximation}, 
   year={2020},
   volume={},
@@ -323,14 +291,10 @@ author = {Dao, Tri and Fu, Daniel Y. and Ermon, Stefano and Rudra, Atri and R\'{
 title = {FLASHATTENTION: fast and memory-efficient exact attention with IO-awareness},
 year = {2022},
 isbn = {9781713871088},
-publisher = {Curran Associates Inc.},
-address = {Red Hook, NY, USA},
 abstract = {Transformers are slow and memory-hungry on long sequences, since the time and memory complexity of self-attention are quadratic in sequence length. Approximate attention methods have attempted to address this problem by trading off model quality to reduce the compute complexity, but often do not achieve wall-clock speedup. We argue that a missing principle is making attention algorithms IO-aware— accounting for reads and writes between levels of GPU memory. We propose FLASHATTENTION, an IO-aware exact attention algorithm that uses tiling to reduce the number of memory reads/writes between GPU high bandwidth memory (HBM) and GPU on-chip SRAM. We analyze the IO complexity of FLASHATTENTION, showing that it requires fewer HBM accesses than standard attention, and is optimal for a range of SRAM sizes. We also extend FLASHATTENTION to block-sparse attention, yielding an approximate attention algorithm that is faster than any existing approximate attention method. FLASHATTENTION trains Transformers faster than existing baselines: 15\% end-to-end wall-clock speedup on BERT-large (seq. length 512) compared to the MLPerf 1.1 training speed record, 3\texttimes{} speedup on GPT-2 (seq. length 1K), and 2.4\texttimes{} speedup on long-range arena (seq. length 1K-4K). FLASHATTENTION and block-sparse FLASHATTENTION enable longer context in Transformers, yielding higher quality models (0.7 better perplexity on GPT-2 and 6.4 points of lift on long-document classification) and entirely new capabilities: the first Transformers to achieve better-than-chance performance on the Path-X challenge (seq. length 16K, 61.4\% accuracy) and Path-256 (seq. length 64K, 63.1\% accuracy).},
-booktitle = {Proceedings of the 36th International Conference on Neural Information Processing Systems},
+booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
 articleno = {1189},
 numpages = {16},
-location = {New Orleans, LA, USA},
-series = {NIPS '22}
 }
 
 @techreport{nvidia2020structuredsparsity,
@@ -345,8 +309,8 @@ series = {NIPS '22}
 
 @INPROCEEDINGS{Li2025SparseTrim,
   author={Li, Jieyu and He, Weifeng and Jiang, Boran and Wang, Xinyu and He, Guanghui and Liu, Dingxuan and Seok, Mingoo},
-  booktitle={2025 IEEE Custom Integrated Circuits Conference (CICC)}, 
-  title={SparseTrim: A Neural Network Accelerator Featuring On-Chip Decompression of Fine-Grained Sparse Model with 10.1TOPS/W System Energy Efficiency}, 
+  booktitle={IEEE Custom Integrated Circuits Conference (CICC)}, 
+  title={{SparseTrim: A Neural Network Accelerator Featuring On-Chip Decompression of Fine-Grained Sparse Model with 10.1TOPS/W System Energy Efficiency}}, 
   year={2025},
   volume={},
   number={},
@@ -356,8 +320,8 @@ series = {NIPS '22}
 
 @INPROCEEDINGS{Fan2025MultiTaskTransformer,
   author={Fan, Zichen and Zhang, Qirui and Abillama, Pierre and Shoori, Sara and Lee, Jungho and Tseng, Chien-Wei and Meng, Wei and Kim, Hun-Seok and Blaauw, David and Sylvester, Dennis},
-  booktitle={2025 Symposium on VLSI Technology and Circuits (VLSI Technology and Circuits)}, 
-  title={A 22nm 25.08TOPS/W Multi-Task Transformer Accelerator with Mixed Precision Structured Sparsity and Two-Stage Task-Adaptive Power Management}, 
+  booktitle={IEEE Symposium on VLSI Technology and Circuits}, 
+  title={{A 22nm 25.08TOPS/W Multi-Task Transformer Accelerator with Mixed Precision Structured Sparsity and Two-Stage Task-Adaptive Power Management}}, 
   year={2025},
   volume={},
   number={},
@@ -367,31 +331,24 @@ series = {NIPS '22}
 
 @inproceedings{Hubara2021AcceleratedSparse,
  author = {Hubara, Itay and Chmiel, Brian and Island, Moshe and Banner, Ron and Naor, Joseph and Soudry, Daniel},
- booktitle = {Advances in Neural Information Processing Systems},
+ booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
  editor = {M. Ranzato and A. Beygelzimer and Y. Dauphin and P.S. Liang and J. Wortman Vaughan},
  pages = {21099--21111},
- publisher = {Curran Associates, Inc.},
  title = {Accelerated Sparse Neural Training: A Provable and Efficient Method to Find N:M Transposable Masks},
- url = {https://proceedings.neurips.cc/paper_files/paper/2021/file/b0490b85e92b64dbb5db76bf8fca6a82-Paper.pdf},
  volume = {34},
  year = {2021}
 }
 
 @inproceedings{Liao2024SparseTransformer,
-author = {Liao, Yuan and Meng, Jian and Seo, Jae-sun},
-title = {A 28nm Scalable and Flexible Accelerator for Sparse Transformer Models},
+author = {Liao, Yuan and Meng, Jian and Seo, Jaesun},
+title = {{A 28nm Scalable and Flexible Accelerator for Sparse Transformer Models}},
 year = {2024},
 isbn = {9798400706882},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA},
 url = {https://doi.org/10.1145/3665314.3670818},
 doi = {10.1145/3665314.3670818},
 abstract = {Transformer-based model has been widely utilized in deep learning. The accuracy-driven applications broadly expand the model size, whereas the current hardware accelerator designs failed to adaptively alternate the scalability to match the corresponding computation intensity of different model sizes. Meanwhile, supporting the transformer models with different sizes requires flexibility for various matrix multiplication under different dimensions. On the higher level, the complex computation flow within transformer models urges a flexible data management design for accelerators. Furthermore, the massive model size enables the possibility of utilizing sparsity and eliminating the redundancy of the model. However, exploring the fine-grained sparsity on hardware remains challenging and under-explored for transformer accelerators. Finally, the non-linear functions and modules of the transformer model require a dedicated hardware design to balance the trade-off between accuracy and hardware cost. Motivated by that, we propose a novel hardware accelerator designed for transformer-based models. In particular, we propose the row-wise matrix multiplication processing elements (RMMPE) and the post-PE processors (PPE). RMMPE computes matrix multiplication in row-wise products with high data reuse. Furthermore, RMMPE efficiently handles the unstructured sparse matrix multiplication with various dimensionality, elevating the scalability and flexibility for different transformer models. PPE computes complex functions in linear approximation. The proposed accelerator achieves 17.1 TOPS peak throughput and 19.5 TOPS/W peak energy efficiency, outperforming the recent SoTA transformer accelerators.},
-booktitle = {Proceedings of the 29th ACM/IEEE International Symposium on Low Power Electronics and Design},
+booktitle = {ACM/IEEE International Symposium on Low Power Electronics and Design},
 pages = {1–6},
-numpages = {6},
-location = {Newport Beach, CA, USA},
-series = {ISLPED '24}
 }
 
 @misc{ba2016layernorm,
@@ -405,18 +362,17 @@ series = {ISLPED '24}
 }
 
 @misc{kaplan2020scaling,
-      title={Scaling Laws for Neural Language Models}, 
+      title={{Scaling Laws for Neural Language Models}}, 
       author={Jared Kaplan and Sam McCandlish and Tom Henighan and Tom B. Brown and Benjamin Chess and Rewon Child and Scott Gray and Alec Radford and Jeffrey Wu and Dario Amodei},
       year={2020},
       eprint={2001.08361},
       archivePrefix={arXiv},
       primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2001.08361}, 
 }
 
 @article{Kung1982Systolic,
 author = {Kung, H. T.},
-title = {Why Systolic Architectures?},
+title = {{Why Systolic Architectures?}},
 year = {1982},
 issue_date = {January 1982},
 publisher = {IEEE Computer Society Press},
@@ -456,7 +412,6 @@ numpages = {10}
  booktitle = {Annual Conference on Machine Learning and Systems (MLSys)},
  pages = {87--100},
  title = {AWQ: Activation-aware Weight Quantization for On-Device LLM Compression and Acceleration},
- url = {https://proceedings.mlsys.org/paper_files/paper/2024/file/42a452cbafa9dd64e9ba4aa95cc1ef21-Paper-Conference.pdf},
  year = {2024}
 }
 
@@ -497,20 +452,17 @@ series = {IRE-AIEE-ACM '59 (Western)}
 
 @inproceedings{Tang2024QUEST,
 author = {Tang, Jiaming and Zhao, Yilong and Zhu, Kan and Xiao, Guangxuan and Kasikci, Baris and Han, Song},
-title = {QUEST: query-aware sparsity for efficient long-context LLM inference},
+title = {{QUEST: Query-Aware Sparsity for Efficient Long-Context LLM Inference}},
 year = {2024},
-publisher = {JMLR.org},
 abstract = {As the demand for long-context large language models (LLMs) increases, models with context windows of up to 128K or 1M tokens are becoming increasingly prevalent. However, long-context LLM inference is challenging since the inference speed decreases significantly as the sequence length grows. This slowdown is primarily caused by loading a large KV cache during self-attention. Previous works have shown that a small portion of critical tokens will dominate the attention outcomes. However, we observe the criticality of a token highly depends on the query. To this end, we propose Quest, a query-aware KV cache selection algorithm. Quest keeps track of the minimal and maximal Key values in KV cache pages and estimates the criticality of a given page using Query vectors. By only loading the Top-K critical KV cache pages for attention, Quest significantly speeds up self-attention without sacrificing accuracy. We show that Quest can achieve up to 7.03\texttimes{} self-attention speedup, which reduces inference latency by 2.23\texttimes{} while performing well on tasks with long dependencies with negligible accuracy loss. Code is available at https://github.com/mit-han-lab/quest.},
-booktitle = {Proceedings of the 41st International Conference on Machine Learning},
+booktitle = {International Conference on Machine Learning (ICML)},
 articleno = {1955},
 numpages = {11},
-location = {Vienna, Austria},
-series = {ICML'24}
 }
 
 @INPROCEEDINGS{Sangyeob2024CTransformer,
   author={Kim, Sangyeob and Kim, Sangjin and Jo, Wooyoung and Kim, Soyeon and Hong, Seongyon and Yoo, Hoi-Jun},
-  booktitle={2024 IEEE International Solid-State Circuits Conference (ISSCC)}, 
+  booktitle={IEEE International Solid-State Circuits Conference (ISSCC)}, 
   title={{20.5 C-Transformer: A 2.6--18.1\,$\mu$J/Token Homogeneous DNN-Transformer/Spiking-Transformer Processor with Big-Little Network and Implicit Weight Generation for Large Language Models}},
   year={2024},
   volume={67},
@@ -521,8 +473,8 @@ series = {ICML'24}
 
 @INPROCEEDINGS{Sangyeob2025SlimLlama,
   author={Kim, Sangyeob and Lee, Jungwan and Yoo, Hoi-Jun},
-  booktitle={2025 IEEE International Solid-State Circuits Conference (ISSCC)}, 
-  title={Slim-Llama: A 4.69mW Large-Language-Model Processor with Binary/Ternary Weights for Billion-Parameter Llama Model}, 
+  booktitle={IEEE International Solid-State Circuits Conference (ISSCC)}, 
+  title={{Slim-Llama: A 4.69mW Large-Language-Model Processor with Binary/Ternary Weights for Billion-Parameter Llama Model}}, 
   year={2025},
   volume={68},
   number={},
