@@ -6,18 +6,15 @@
 \usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
 \usepackage{textcomp}
 \usepackage{stfloats}
-\usepackage{xurl}
+\usepackage{url}
 \usepackage{verbatim}
 \usepackage{graphicx}
+\usepackage{cite}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
 \usepackage[table]{xcolor}
 \usepackage{multirow}
 \usepackage{booktabs}
-\newcommand{\good}[1]{\textcolor{green!50!black}{#1}}
-\newcommand{\bad}[1]{\textcolor{red!70!black}{#1}}
-\newcommand{\TODO}[1]{\textcolor{red!80!black}{\textbf{[TODO: #1]}}}
-\usepackage{cite}
 \usepackage[colorlinks=true,allcolors=blue,breaklinks=true]{hyperref}
-\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
 
 \begin{document}
 
@@ -327,25 +324,6 @@ Sparsity awareness reduces both external-memory traffic and on-chip cycles: the 
 \label{sec:arch-challenges-nonlinearity}
 
 The PPE approximates every non-linear function with multiplications, additions, and shifts: the softmax LUT and leading-one-detect logarithm, the RFN fusion, and the single-comparator ReLU. The chip executes the residual non-linear path without leaving the on-die fabric, at the accuracy budget reported in Table~\ref{tab:accuracy}.
-
-% =========================================================================
-% \section{Top-Level Scheduling}
-% \label{sec:sched}
-
-% The four operating modes of the accelerator---direct GEMM, no-bias GEMM, softmax, and layer normalization-fused GEMM---share a single load--stream--drain template: an activation tile is written into Input Memory, a weight tile is streamed through the PE chain consuming the activation, and Accumulator Memory is drained through the appropriate post-PE branch. Only the post-PE configuration and, in the softmax mode, an additional drain over Softmax Memory distinguish one mode from another. The four cases are illustrated in Fig.~\ref{fig:sched}.
-
-% \begin{figure}[!t]
-%     \centering
-%     \framebox[\columnwidth]{\rule{0pt}{6cm}\TODO{Fig.~\ref{fig:sched}: four-panel top-level scheduling figure --- to be drawn by user per \texttt{src/figures-todo/fig-top-scheduling.md}. Panels show, for each of the four operating modes (direct, no-bias, softmax, layer-norm), the tile shapes (activation, weight, and output), the schedule timeline, and the active post-PE branch.}}
-%     \caption{Top-level scheduling of the four supported transformer operating modes. Each mode reuses the same load--stream--drain cycle; only the post-PE branch and, in the softmax case, a second drain of Accumulator Memory differ. \TODO{User caption once figure is drawn.}}
-%     \label{fig:sched}
-% \end{figure}
-
-% The scheduler interface is small. At the start of each weight tile, the address generator inside every RMMPE is reset; at the end of MAC, an accumulator-drain command shifts the accumulated partial sums from Accumulator Memory into PPE1; in the softmax mode only, a second drain command later shifts Softmax Memory into PPE2. Three tile-completion flags mark the end of one tile pair, the end of one weight tile (one column-group of the output), and the end of one activation tile (one row-group of the output). Outer iteration over multiple weight or activation tiles uses no additional control: a fresh address-generator reset simply restarts the inner loop on the next tile.
-
-% The softmax mode is the only mode whose schedule departs from the load--stream--drain template, because the baseline two-pass softmax requires Accumulator Memory to be drained twice: once to extract $X_{\max}$ and once to compute $X_{i}{-}X_{\max}$. Section~\ref{sec:arch-lsoft} eliminates the second pass via a tile-fused running-max / log-sum-exp recurrence, simplifying the scheduler back to one drain even for softmax.
-
-% =========================================================================
 
 \begin{figure}[!t]
     \centering
