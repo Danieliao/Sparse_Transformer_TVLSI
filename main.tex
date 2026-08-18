@@ -96,7 +96,7 @@ This article extends our previous conference paper~\cite{Liao2024SparseTransform
     \centering
     \revfig{\includegraphics[width=\dimexpr\columnwidth-9pt\relax,page=1,trim=1 1 1 1,clip]{figures/TVLSI_drawing.pdf}}
     \vspace{-12pt}
-    \caption{(a) Row-wise product matrix multiplication and (b) the row-wise run-length coding (RRLC) format applying to the Input Matrix in (a).}
+    \caption{(a) Row-wise product matrix multiplication and (b) the row-wise run-length coding (RRLC) format applying to the Input Matrix in (a). \rev{This example uses 2-bit \textit{Run}-field.}}
     \label{fig:rwp-rrlc}
 \end{figure}
 
@@ -359,7 +359,7 @@ An additional opportunity, untapped in the single-chip prototype, is the paralle
 
 Sparsity awareness reduces both external-memory traffic and on-chip cycles: the multiplications between zero weights and their corresponding activation elements are skipped, and the RRLC \textit{Run} pointer drives the RRLC decoder so that zero MACs never enter the multiplier array. The pattern is element-wise unstructured, so the algorithm side retains full freedom over which weights to drop.
 
-\rev{The prototype consumes pre-encoded streams, with weights encoded once per model offline and activations encoded by the host. Encoding is nonetheless a streaming, local transform, needing per lane only a zero comparator, an $R$-bit run counter and a write-address counter alongside a per-group length tracker, so it can equally be placed on the PPE output path. A result matrix would then leave the chip already in RRLC form, ready to serve as the next layer's activations. In synthesis such an encoder occupies only $0.24\%$ of the area of one RMMPE and its PPE1. It is a proposed extension and is not part of the taped-out prototype.}
+\rev{The prototype consumes pre-encoded streams, with weights encoded once per model offline and activations encoded by the host. Encoding is nonetheless a streaming, local transform, needing per lane only a zero comparator, an $R$-bit run counter and a write-address counter alongside a per-group length tracker, so it can equally be placed on the PPE output path. A result matrix would then leave the chip already in RRLC form, ready to serve as the next layer's activations. In synthesis such an encoder occupies only $0.24\%$ of the area and $0.33\%$ of the power of one cluster of an RMMPE and a PPE1. It is a proposed extension and is not part of the taped-out prototype.}
 
 \subsubsection{Non-Linearity}
 \label{sec:arch-challenges-nonlinearity}
@@ -393,20 +393,21 @@ The PPE approximates every non-linear function with multiplications, additions, 
         \toprule
         \rev{Module} & \rev{Sub-module} & \rev{Area (\%)} & \rev{Power (\%)} \\
         \midrule
-        \multirow{5}{*}{\rev{RMMPE ($\times$8)}}
-            & \rev{Multiplier array}   & \rev{1.07}  & \rev{19.05} \\
+        \multirow{6}{*}{\rev{RMMPE ($\times$8)}}
+            & \rev{Multiplier array}   & \rev{2.52}  & \rev{19.06} \\
             & \rev{Accumulator Memory} & \rev{82.68} & \rev{47.24} \\
-            & \rev{RRLC decoder}       & \rev{0.30}  & \rev{4.16}  \\
+            & \rev{RRLC decoder}       & \rev{0.16}  & \rev{2.25}  \\
             & \rev{Input Mem}          & \rev{3.33}  & \rev{2.10}  \\
-            & \rev{\textit{total}}     & \rev{\textit{87.38}} & \rev{\textit{72.56}} \\
+            & \rev{Other}              & \rev{0.14}  & \rev{1.91}  \\
+            & \rev{\textit{total}}     & \rev{\textit{88.83}} & \rev{\textit{72.56}} \\
         \midrule
         \multirow{3}{*}{\rev{PPE}}
-            & \rev{PPE1 ($\times$8)}   & \rev{4.78}  & \rev{25.11} \\
+            & \rev{PPE1 ($\times$8)}   & \rev{4.77}  & \rev{25.11} \\
             & \rev{PPE2}               & \rev{0.40}  & \rev{0.98}  \\
             & \rev{\textit{total}}     & \rev{\textit{5.17}}  & \rev{\textit{26.09}} \\
         \midrule
         \rev{Global Mem}  & \rev{Global Mem}  & \rev{3.23} & \rev{0.26} \\
-        \rev{Peripherals} & \rev{Peripherals} & \rev{4.22} & \rev{1.09} \\
+        \rev{Peripherals} & \rev{Peripherals} & \rev{2.77} & \rev{1.09} \\
         \bottomrule
     \end{tabular*}
 \end{table}
@@ -423,7 +424,7 @@ We prototyped the proposed sparse transformer accelerator in TSMC~28\,nm CMOS, w
 
 Fig.~\ref{fig:die} shows the annotated die micrograph of the 28\,nm prototype. The eight RMMPE tiles, each paired with its PPE1, are placed around the global weight memory in a ring that supports the cascaded weight streaming bus. The prototype chip occupies a $9.26$\,mm$^{2}$ area in TSMC 28\,nm CMOS, with $317$\,KB of on-chip SRAM.
 
-\rev{Table~\ref{tab:breakdown} breaks the core down by block. Area is dominated by SRAM: the Accumulator Memory banks alone account for $82.7\%$, so the compute fabric and the whole non-linear pipeline together occupy under $7\%$. Power redistributes toward the active blocks, with the multiplier array at $19.1\%$ and PPE1 at $25.1\%$. The RRLC decoder, the hardware that this format costs over a dense datapath, takes $0.30\%$ of core area and $4.16\%$ of core power.}
+\rev{Table~\ref{tab:breakdown} breaks the core down by block. Area is dominated by SRAM: the Accumulator Memory banks alone account for $82.7\%$, so the compute fabric and the whole non-linear pipeline together occupy under $8\%$. Power redistributes toward the active blocks, with the multiplier array at $19.1\%$ and PPE1 at $25.1\%$. The RRLC decoder, the hardware that this format adds to a dense datapath, takes only $0.16\%$ of core area and $2.25\%$ of core power, or $6.4\%$ of the area of the multiplier array.}
 
 Fig.~\ref{fig:setup} shows the measurement setup. The chip is mounted on a test PCB and driven by a host FPGA that handles I/O streaming and control logic. The FPGA in turn is configured from a host PC that issues the test vectors and reads back the inference output. A power supply provides the power, an oscilloscope probes the on-die signals brought out to the pad ring, and an energy analyzer (Joulescope) measures voltage and current.
 
