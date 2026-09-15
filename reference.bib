@@ -516,3 +516,32 @@ numpages = {11},
   booktitle={International Conference on Learning Representations (ICLR)},
   year={2019},
 }
+
+@ARTICLE{Schneider2024TCASI,
+  author={Schneider, Felix and Karagounis, Michael and Choubey, Bhaskar},
+  journal={IEEE Transactions on Circuits and Systems I: Regular Papers}, 
+  title={Energy and Bandwidth Efficient Sparse Programmable Dataflow Accelerator}, 
+  year={2024},
+  volume={71},
+  number={9},
+  pages={4092-4105},
+  keywords={Memory management;Logic;Bandwidth;System-on-chip;Encoding;Energy efficiency;Convolutional neural networks;DNN accelerator;flexible dataflow;map space exploration;sparse processing;edge AI},
+  doi={10.1109/TCSI.2024.3425895}}
+
+@inproceedings{Tang2022Mentha,
+author = {Tang, Minjin and Wen, Mei and Cao, Yasong and Shen, Junzhong and Yang, Jianchao and Fei, Jiawei and Guo, Yang and Liu, Sheng},
+title = {Mentha: Enabling Sparse-Packing Computation on Systolic Arrays},
+year = {2023},
+isbn = {9781450397339},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3545008.3545053},
+doi = {10.1145/3545008.3545053},
+abstract = {Generalized Sparse Matrix-Matrix Multiplication (SpGEMM) is a critical kernel in domains like graph analytic and scientific computation. As a kind of classical special-purpose architecture, systolic arrays were first used for complex computing problems, e.g., matrix multiplication. However, classical systolic arrays are not efficient enough when handling sparse matrices due to the fact that the PEs containing zero-valued entries perform unnecessary operations that do not contribute to the result. Accordingly, in this paper, we propose Mentha, a framework that enables systolic arrays to accelerate sparse matrix computation by employing a sparse-packing algorithm suitable for various dataflow of systolic array. Firstly, Mentha supports both online and offline methods. By packing the rows or columns of the sparse matrix, the zero-valued items in the matrix are significantly reduced and the density of the matrix is improved. In addition, acceleration benefits can be obtained by the adaptation scheme even with limited resources. Moreover, we reconfigure PEs in systolic arrays at a low cost (1.28x in area, 1.21x in power) and find that our method outperforms TPU-like systolic arrays by 1.2~3.3x in terms of SpMM and 1.3~4.4x in terms of SpGEMM when dealing with moderately sparse matrices (sparsity < 0.9), while its performance is at least 9.7x better than cuSPARSE. Furthermore, experimental results show a FLOPs reduction of roughly 3.4x in the neural network.},
+booktitle = {Proceedings of the 51st International Conference on Parallel Processing},
+articleno = {18},
+numpages = {11},
+keywords = {matrix compression, sparse matrix multiplication, systolic arrays},
+location = {Bordeaux, France},
+series = {ICPP '22}
+}

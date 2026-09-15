@@ -47,7 +47,7 @@ This work was supported in part by the National Science Foundation under grant 2
 
 % =========================================================================
 \begin{abstract}
-Transformer inference on edge platforms is bounded by four coupled design challenges: scalability across a broad model-size envelope, flexibility across the heterogeneous matrix shapes of attention, projection, and feed-forward kernels, native handling of arbitrary unstructured weight sparsity, and on-die execution of the non-linear operators (softmax, layer normalization, GELU) that dominate latency despite contributing a negligible fraction of FLOPs. This paper presents a 28\,nm sparse transformer accelerator that addresses all four through co-design. A row-wise run-length coding (RRLC) format compresses arbitrary unstructured sparsity into a single-pointer stream that drives a row-wise matrix-multiplication processing element (RMMPE) chain, eliminating zero-weight multiplications without imposing structural constraints. A post-PE pipeline linearizes softmax with a six-entry exponential look-up table and a leading-one-detect logarithm approximation, while a running feature normalization (RFN) scheme folds layer normalization into the existing per-row quantization scale. Silicon characterization of a prototype in TSMC~28\,nm delivers~$1.634$\,TOPS peak performance on a~$90\,\%$-sparse workload and reaches a peak measured energy efficiency of~$20.32$\,TOPS/W on ViT-Base and~$21.93$\,TOPS/W on BERT-base at~$90\,\%$ sparsity. Against prior sparse transformer accelerators under the same sparsity, this chip is $1.62\times$\,--\,$2.47\times$ better in energy efficiency.
+Transformer inference on edge platforms is bounded by four coupled design challenges: scalability across a broad model-size envelope, flexibility across the heterogeneous matrix shapes of attention, projection, and feed-forward kernels, native handling of arbitrary unstructured weight sparsity, and on-die execution of the non-linear operators (softmax, layer normalization, GELU) that dominate latency despite contributing a negligible fraction of FLOPs. This paper presents a 28\,nm sparse transformer accelerator that addresses all four through co-design. A row-wise run-length coding (RRLC) format compresses arbitrary unstructured sparsity into a single-pointer stream that drives a row-wise matrix-multiplication processing element (RMMPE) chain, eliminating zero-weight multiplications without imposing structural constraints. \rev{A post-PE pipeline embeds a look-up-table and leading-one-detect softmax approximation from prior work directly into the GEMM dataflow, supporting long attention rows,} while a running feature normalization (RFN) scheme folds layer normalization into the existing per-row quantization scale. Silicon characterization of a prototype in TSMC~28\,nm delivers~$1.634$\,TOPS peak performance on a~$90\,\%$-sparse workload and reaches a peak measured energy efficiency of~$20.32$\,TOPS/W on ViT-Base and~$21.93$\,TOPS/W on BERT-base at~$90\,\%$ sparsity. Against prior sparse transformer accelerators under the same sparsity, this chip is $1.62\times$\,--\,$2.47\times$ better in energy efficiency.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -85,7 +85,7 @@ Taken together, these forces distill the practical bottlenecks of transformer-ta
 
 Existing transformer accelerators meet these challenges only in part. The approximate-computing processor of~\cite{Yang2022isscc} and the early-exit processor of~\cite{Thierry2023isscc} both support unstructured sparsity and on-chip non-linear functions, but reach their headline efficiency only at a particular operating point: \cite{Yang2022isscc} relies on approximate-computing speculation that assumes simultaneous input and weight sparsity, and \cite{Thierry2023isscc} couples entropy-based early exit, so neither figure reflects a model average across the heterogeneous GEMMs (\textbf{Challenges 1, 2}). \cite{Li2025SparseTrim} provides no on-chip non-linear function unit (\textbf{Challenge 4}), so softmax and layer normalization fall back to off-chip arithmetic and a full transformer cannot execute end-to-end. \cite{Fan2025MultiTaskTransformer} restricts sparsity to a block-wise structured pattern (\textbf{Challenge 3}), which constrains the pruning mask and therefore caps the attainable sparsity and accuracy relative to an unstructured scheme. No prior design satisfies all four challenges on a single fabric.
 
-To attack all four challenges within a single fabric, this paper presents a sparse transformer accelerator built around two co-designed compute primitives. The first is a row-wise matrix multiplication processing element (RMMPE) that executes every GEMM in the transformer in row-wise product form. Because the row-wise schedule is constrained by only one dimension of GEMMs, the same RMMPE handles the attention batched matrix multiplications (BMMs), projection layers, and feed-forward network (FFN) GEMMs with improved utilization compared to 2D architecture (\textbf{Challenges 1 and 2}). RMMPE further consumes inputs and weights in a row-wise run-length coding (RRLC) format, an extension of run-length coding to multi-row groups, that exposes arbitrary unstructured sparsity to the parallel MAC array (\textbf{Challenge 3}). The second primitive is a post-PE processor (PPE) that linearizes softmax through a six-entry exponential look-up and a leading-one-detect logarithm, and folds layer normalization into the per-row quantization scale of a precomputed running feature statistic (\textbf{Challenge 4}).
+To attack all four challenges within a single fabric, this paper presents a sparse transformer accelerator built around two co-designed compute primitives. The first is a row-wise matrix multiplication processing element (RMMPE) that executes every GEMM in the transformer in row-wise product form. Because the row-wise schedule is constrained by only one dimension of GEMMs, the same RMMPE handles the attention batched matrix multiplications (BMMs), projection layers, and feed-forward network (FFN) GEMMs with improved utilization compared to 2D architecture (\textbf{Challenges 1 and 2}). RMMPE further consumes inputs and weights in a row-wise run-length coding (RRLC) format, shown in Fig.~\ref{fig:rwp-rrlc}, that exposes arbitrary unstructured sparsity to the parallel MAC array (\textbf{Challenge 3}). The second primitive is a post-PE processor (PPE) that \rev{embeds a softmax approximation adopted from prior softmax hardware~\cite{meiqi2018softmax} into the matrix-multiplication pipeline itself, so that attention scores leave the RMMPE as 3-bit partially processed values and the remaining processing overlaps the next matrix multiplication to hide its latency,} and folds layer normalization into the per-row quantization scale of a precomputed running feature statistic (\textbf{Challenge 4}).
 
 This article extends our previous conference paper~\cite{Liao2024SparseTransformer} with deeper design choice analysis and replaces the simulation result by the silicon experiment result. The remainder is organized as follows: Section~\ref{sec:algo} develops the algorithm/hardware co-design, Section~\ref{sec:arch} details the accelerator architecture, Section~\ref{sec:results} reports the silicon-measured results and cross-model benchmarks, and Section~\ref{sec:conclusion} concludes the paper.
 
@@ -94,9 +94,9 @@ This article extends our previous conference paper~\cite{Liao2024SparseTransform
 
 \begin{figure}[!t]
     \centering
-    \revfig{\includegraphics[width=\dimexpr\columnwidth-9pt\relax,page=1,trim=1 1 1 1,clip]{figures/TVLSI_drawing.pdf}}
+    \includegraphics[width=\dimexpr\columnwidth-9pt\relax,page=1,trim=1 1 1 10,clip]{figures/TVLSI_drawing.pdf}
     \vspace{-12pt}
-    \caption{(a) Row-wise product matrix multiplication and (b) the row-wise run-length coding (RRLC) format applying to the Input Matrix in (a). \rev{This example uses 2-bit \textit{Run}-field.}}
+    \caption{(a) Row-wise product matrix multiplication and (b) the row-wise run-length coding (RRLC) format applying to the Input Matrix in (a). This example uses 2-bit \textit{Run}-field.}
     \label{fig:rwp-rrlc}
 \end{figure}
 
@@ -116,22 +116,26 @@ Row-wise product computes one output row at a time by accumulating scaled rows o
 \end{equation}
 Fig.~\ref{fig:rwp-rrlc}(a) illustrates the schedule on a small example: each non-zero input element $\mathrm{In}[i,k]$ broadcasts against weight row $k$ to contribute a partial-product row into $\mathrm{Out}[i,:]$, while zero input elements skip their weight-row reads entirely. Four properties of Eq.~\eqref{eq:rwp} make it directly attractive for sparse transformer inference~\cite{Nitish2020MatRaptor}. First, the input, weight, and output tensors all traverse the memory row-wise, allowing a single data format to serve every operand. Second, zero entries of $\mathrm{In}[i,j]$ contribute nothing to the accumulation, so a sparsity-aware scheduler can skip them at zero cycle cost. Third, multiple output rows can be produced concurrently by dispatching independent input rows to parallel MAC arrays. Fourth, only a small number of output rows, rather than the full output matrix, needs to be buffered on chip, removing the large-buffer constraint of inner-product schedules. Together, these four properties address \textbf{Challenges~2} and \textbf{3}: a single dataflow handles every matrix shape, and the zero-skipping is native rather than retroactively fitted.
 
-Prior row-wise-product accelerators~\cite{Nitish2020MatRaptor} suffer from a complementary limitation, however: by computing one output row per multiplier, they leave throughput on the table and do not scale. The familiar sparse-matrix encodings such as compressed sparse column (CSC), coordinate list (COO), and ordinary run-length coding (RLC)) also serialize inherently %naturally 
-and resist parallel consumption. We resolve this with the row-wise run-length coding (RRLC) format, which trades a small amount of compressed-stream padding for the ability to feed a $N$-wide multiplier array per cycle. The padding cost is empirically small for the sparsity regimes considered here, and the corresponding throughput gain restores scalability (\textbf{Challenge~1}). The row-wise output further aligns naturally with the row-wise nature of layer normalization and softmax (\textbf{Challenge~4}).
+Prior row-wise-product accelerators~\cite{Nitish2020MatRaptor} suffer from a complementary limitation, however: by computing one output row per multiplier, they leave throughput on the table and do not scale. \rev{The familiar sparse-matrix encodings also resist parallel consumption: coordinate list (COO) and compressed sparse column (CSC) carry per-element indices whose width grows with the matrix dimension and must be walked serially, a bitmap carries one mask bit per element regardless of sparsity and needs a running population count to recover addresses, and ordinary run-length coding (RLC) yields one serial stream per row.} We resolve this with the row-wise run-length coding (RRLC) format, which trades a small amount of compressed-stream padding for the ability to feed a $N$-wide multiplier array per cycle. The padding cost is empirically small for the sparsity regimes considered here, and the corresponding throughput gain restores scalability (\textbf{Challenge~1}). The row-wise output further aligns naturally with the row-wise nature of layer normalization and softmax (\textbf{Challenge~4}).
 
 \subsection{Row-Wise Run-Length Coding (RRLC)}
 \label{sec:algo-rrlc}
 
-RRLC (Fig.~\ref{fig:rwp-rrlc}(b)) is a multi-row variant of run-length coding. The matrix is partitioned into groups of $N$ contiguous rows ($N{=}8$ in the prototype, matching the row parallelism of one PE), and each group is serialized into a single memory word that concatenates the $N$ rows column by column. Every non-zero element contributes a (\textit{Value},~\textit{Run}) tuple: \textit{Value} carries the 8-bit weight, and the 3-bit \textit{Run} records how many consecutive zeros preceded it. When more than $2^{3}{-}1{=}7$ zeros separate two non-zeros, a placeholder \textit{Value}\,$=0$ tuple is inserted so that the run never overflows\rev{, so the \textit{Run} width is set by the sparsity statistics alone and is independent of the matrix dimensions}. Within a group, rows of differing density are padded with the same placeholder so that all rows in the same group exhaust at the same time. A pointer memory stores the end address of every group, serving two roles: it signals the RRLC decoder to stop streaming the current group's tuples, and, because group $g{+}1$ begins immediately after group $g$, it also acts as an index that lets the decoder jump directly to any output row group.
+RRLC (Fig.~\ref{fig:rwp-rrlc}(b)) is a multi-row variant of run-length coding. The matrix is partitioned into groups of $N$ contiguous rows ($N{=}8$ in the prototype, matching the row parallelism of one PE), and each group is serialized into a single memory word that concatenates the $N$ rows column by column. Every non-zero element contributes a (\textit{Value},~\textit{Run}) tuple: \textit{Value} carries the 8-bit weight, and the 3-bit \textit{Run} records how many consecutive zeros preceded it. When more than $2^{3}{-}1{=}7$ zeros separate two non-zeros, a placeholder \textit{Value}\,$=0$ tuple is inserted so that the run never overflows, so the \textit{Run} width is set by the sparsity statistics alone and is independent of the matrix dimensions. Within a group, rows of differing density are padded with the same placeholder so that all rows in the same group exhaust at the same time. A pointer memory stores the end address of every group, serving two roles: it signals the RRLC decoder to stop streaming the current group's tuples, and, because group $g{+}1$ begins immediately after group $g$, it also acts as an index that lets the decoder jump directly to any output row group.
 
 \begin{figure}[!t]
     \centering
-    \includegraphics[width=\columnwidth]{figures_analysis/rrlc_storage.pdf}
-    \caption{Normalized weight-storage savings versus sparsity for ViT-Base under RLC (dashed) and RRLC (solid, this work) at $R\in\{2,3,4\}$-bit \textit{Run}-field widths.}
+    \revfig{\includegraphics[width=\dimexpr\columnwidth-9pt\relax]{figures_analysis/rrlc_formats.pdf}}
+    \caption{\rev{Normalized weight-storage savings versus sparsity, summed over the two weight matrices of one ViT-Base block. (a)~RLC and RRLC at $R\in\{2,3,4\}$-bit \textit{Run}-field widths. (b)~3-bit RRLC against bitmap, COO, and CSC.}}
     \label{fig:rrlc-storage}
+    \vspace{-6pt}
 \end{figure}
 
-The choice of three \textit{Run} bits is the empirical optimum for the $75\%$\,--\,$90\%$ sparsity regime targeted by sensitivity-aware pruning of both language and vision transformers. Fig.~\ref{fig:rrlc-storage} quantifies the trade-off on ViT-Base: $R{=}3$ RRLC achieves $2.7\times$, $3.4\times$, $4.5\times$, and $5.1\times$ savings at $75\%$, $80\%$, $85\%$, and $90\%$ sparsity, respectively. $R{=}2$ peaks at $75\%$ sparsity and then plateaus around $2.5\times$ as the $3$-state \textit{Run} field underflows the average run length. $R{=}4$ extends the linear regime further out but pays a per-tuple overhead at every sparsity below $\sim$88$\%$, only surpassing $R{=}3$ at $90\%$ sparsity. \rev{Tables~\ref{tab:accuracy} and~\ref{tab:bert} identify $80\%$ sparsity as the balanced point between accuracy and compression, which sits below that crossover and therefore favors $R{=}3$ over $R{=}4$.} The dashed RLC curves are the row-by-row encoding upper bound; RRLC pays a small inter-row-alignment premium ($\sim 6\%$ at $70\%$ sparsity, growing to $\sim$11$\%$ at $90\%$) for the privilege of decoding $N$ rows on a parallel multiplier array. RRLC encoding is performed once per model with the sparse weight offline, and its cost is therefore amortized away from inference. The RRLC decoder, detailed in Section~\ref{sec:arch-rmmpe}, consumes the \textit{Run} stream to drive accumulator addresses; the multiplier array thus sees only non-zero weights even though it executes a dense schedule on \textit{Value}.
+The choice of three \textit{Run} bits is the empirical optimum for the $75\%$\,--\,$90\%$ sparsity regime targeted by sensitivity-aware pruning of both language and vision transformers. Fig.~\ref{fig:rrlc-storage} quantifies the trade-off on \rev{the FFN weights of} ViT-Base: $R{=}3$ RRLC achieves $2.7\times$, $3.4\times$, \rev{$4.4\times$}, and $5.1\times$ savings at $75\%$, $80\%$, $85\%$, and $90\%$ sparsity, respectively. $R{=}2$ peaks at $75\%$ sparsity and then plateaus around $2.5\times$ as the $3$-state \textit{Run} field underflows the average run length. $R{=}4$ extends the linear regime further out but pays a per-tuple overhead at every sparsity below $\sim$88$\%$, only surpassing $R{=}3$ at $90\%$ sparsity. Tables~\ref{tab:accuracy} and~\ref{tab:bert} identify $80\%$ sparsity as the balanced point between accuracy and compression, which sits below that crossover and therefore favors $R{=}3$ over $R{=}4$. The dashed RLC curves are the row-by-row encoding upper bound; RRLC pays a small inter-row-alignment premium ($\sim 6\%$ at $70\%$ sparsity, growing to $\sim$11$\%$ at $90\%$) for the privilege of decoding $N$ rows on a parallel multiplier array. RRLC encoding is performed once per model with the sparse weight offline, and its cost is therefore amortized away from inference. \rev{In the fabricated prototype, activations are likewise supplied in RRLC form, encoded by the host between layers.} The RRLC decoder consumes the \textit{Run} stream to drive accumulator addresses; the multiplier array thus sees only non-zero weights even though it executes a dense schedule on \textit{Value}.
+
+\rev{Fig.~\ref{fig:rrlc-storage}(b) places RRLC against the other common sparse formats under the same storage model at $R{=}3$. The ordering follows the metadata cost per non-zero. COO and CSC carry indices of the matrix dimension ($22$ and $11$ bits for ViT-Base), so their savings are bounded by the index width rather than by the sparsity. A bitmap costs one mask bit per element, i.e., $1/(1-s)$ bits per non-zero, growing from $5$ bits at $80\%$ to $10$ bits at $90\%$. RRLC costs $3$ bits per retained element plus bounded padding, so it overtakes the bitmap from $73\%$ sparsity onward: $3.4\times$ versus $3.1\times$ at $80\%$ and $5.1\times$ versus $4.4\times$ at $90\%$. Below that crossover the bitmap is more compact, but outside the $75\%$\,--\,$90\%$ range targeted here. Storage is, however, not the decisive criterion: all three alternatives yield their non-zeros serially, whereas the RRLC decoder issues $N$ non-zeros to $N$ multiplier lanes every cycle from a single memory word, with one $R$-bit accumulator per lane and no index that scales with the matrix size.}
+
+\rev{Two recent accelerators show the same trade-off. The programmable-dataflow design of~\cite{Schneider2024TCASI} keeps weights run-length coded off chip but decompresses each tile into an uncompressed, bitmask-tagged L1 so that any loop order can address it, reserving the bitmask for activations near $50\%$ sparsity. RRLC, in contrast, stays compressed up to the multiplier. Mentha~\cite{Tang2022Mentha} merges rows with non-overlapping non-zeros into one packed row, each element tagged with its source row, so that a 2D systolic array processes fewer, denser rows and a reconfigured PE steers each product to one of up to $T$ accumulators by the tag. Its speedup is thus bounded by $T$ rather than by the sparsity, unfilled columns still occupy array slots, and a packing pass is needed, whereas the row-wise product skips every zero weight natively.}
 
 \subsection{Hardware-Aware Algorithm Design}
 \label{sec:algo-hwawer}
@@ -148,7 +152,7 @@ Layer normalization~\cite{ba2016layernorm} acts on each token independently. Giv
 \end{equation}
 This is hardware-inefficient on two aspects. First, the per-token reduction across $F$ is serial and data-dependent, so every token stalls the downstream pipeline until its statistics arrive. Second, the resulting scale is dynamic, since a fresh $(\mu, \sigma)$ pair is produced for every token, and therefore cannot be folded into a fixed-point quantizer at calibration time. Substituting batch normalization~\cite{Ioffe2015BatchNorm} does not rescue either issue, because the reduction axes, $B\times N$, do not align with layer normalization's $F$.
 
-The proposed RFN preserves the form of Eq.~\eqref{eq:ln} but moves the reduction off the inference path. During training, $(\mu, \sigma)$ are collected over the $[B, N]$ batch-token plane, leaving one statistic per feature (shape $F$), and tracked as running estimates with momentum $\alpha$:
+The proposed RFN preserves the form of Eq.~\eqref{eq:ln} but moves the reduction off the inference path. During \rev{fine-tuning}, $(\mu, \sigma)$ are collected over the $[B, N]$ batch-token plane, leaving one statistic per feature (shape $F$), and tracked as running estimates with momentum $\alpha$:
 \begin{align}
     \mu_{r} &= \alpha\,\mu + (1-\alpha)\,\mu_{r}, \\
     \sigma_{r} &= \alpha\,\sigma + (1-\alpha)\,\sigma_{r}.
@@ -156,6 +160,13 @@ The proposed RFN preserves the form of Eq.~\eqref{eq:ln} but moves the reduction
 The training forward pass still normalizes with the instantaneous $(\mu, \sigma)$, so the LN gradient signal that vision transformers rely on is preserved; the running estimates $(\mu_{r}, \sigma_{r})$ are used only at inference. Once training finishes, $(\mu_{r}, \sigma_{r})$ are frozen, and Eq.~\eqref{eq:ln} collapses into a \emph{static} per-feature affine transform of $x_{i}$ with no remaining online reduction. Its scale and bias fold at calibration into the per-row INT8 quantization scale already carried by every PE row, so %on chip 
 on-chip computation of an LN-type layer 
 reduces to a per-row scale broadcast over the existing quantization-scale bus, without the need of a dedicated normalization datapath, an iterative function unit, or a normalization buffer.
+
+\rev{RFN is introduced into a pretrained model by fine-tuning, and the substitution cannot be abrupt. Each normalization layer therefore blends the two operators during fine-tuning,
+\begin{align}
+    y &= \lambda\,\mathrm{RFN}(x) + (1-\lambda)\,\mathrm{LN}(x), \label{eq:rfn-blend}\\
+    \lambda(t) &= \min\!\big(1,\,t/T_{\mathrm{ramp}}\big), \label{eq:rfn-ramp}
+\end{align}
+where $t$ is the optimizer step and $T_{\mathrm{ramp}}$ the ramp length. The running statistics are accumulated at every step regardless of $\lambda$, so they have converged when $\lambda$ reaches~$1$: $\lambda{=}0$ is the pretrained model and $\lambda{=}1$ the deployed operator. $T_{\mathrm{ramp}}$ is set to $12$ epochs of the $24$-epoch run for the ViT models and to $1.5$ epochs of the $3$-epoch run for BERT-base. Three further settings matter: the running statistics use momentum $\alpha{=}0.1$; for the ViT models, the pretrained model serves as a frozen teacher (KL distillation, temperature~$2$), which stabilizes the network once $\lambda{=}1$; and training runs in bfloat16, since RFN activations exceed the float16 range.}
 
 
 \begin{table}[!t]
@@ -169,51 +180,50 @@ reduces to a per-row scale broadcast over the existing quantization-scale bus, w
         \toprule
         \multirow{2}{*}{Model} & \multirow{2}{*}{FP32} & \multirow{2}{*}{W/A}
             & \multirow{2}{*}{SW Acc.} & \multirow{2}{*}{HW Acc.}
-            & \rev{HW Acc.} & \rev{HW Acc.} \\
-            & & & & & \rev{@\,$80\%$} & \rev{@\,$90\%$} \\
+            & HW Acc. & HW Acc. \\
+            & & & & & @\,$80\%$ & @\,$90\%$ \\
         \midrule
-        ViT-Tiny  & 74.34 & 8/8 & 73.04 & 72.02 & \rev{71.56} & \rev{67.35} \\
-        ViT-Small & 80.37 & 8/8 & 80.05 & 79.45 & \rev{77.49} & \rev{74.67} \\
-        ViT-Base  & 84.54 & 8/8 & 84.52 & 83.88 & \rev{82.64} & \rev{81.61} \\
+        ViT-Tiny  & 74.34 & 8/8 & 73.04 & 72.02 & 71.56 & 67.35 \\
+        ViT-Small & 80.37 & 8/8 & 80.05 & 79.45 & 77.49 & 74.67 \\
+        ViT-Base  & 84.54 & 8/8 & 84.52 & 83.88 & 82.64 & 81.61 \\
         \bottomrule
     \end{tabular*}
 \end{table}
 
+\subsubsection{ReLU in Place of GELU}
+\label{sec:algo-relu}
 
-\subsubsection{Token-Wise Quantization}
+The chip implements ReLU rather than GELU~\cite{hendrycks2023GELU} as the FFN activation function. ReLU is a single MSB check on the input and essentially costs no extra cycles or area. GELU, by contrast, would require an additional iterative function unit for its tanh primitive. Fig.~\ref{fig:profile}(d) highlights the cost of executing the original GELU, between $15\%$ and $23\%$ of per-block cycles on its own, and the ReLU substitution eliminates that segment entirely. Measured in isolation, with every other operator left in its original form, the substitution causes a $0.78\%$ accuracy drop on BERT-base over the General Language Understanding Evaluation (GLUE) benchmark~\cite{wang2019glue}. \rev{ReLU replaces GELU by direct substitution at the start of the same fine-tuning run that introduces RFN; unlike RFN, it needs no gradual ramp.}
+
+\subsubsection{Post Training Quantization}
 \label{sec:algo-quant}
 
 Activations are quantized to INT8 precision with a per-token (per-row) scale factor that shares the per-row quantization-scale bus with RFN; weights use a per-channel INT8 scale, calibrated offline because their distribution is stationary at inference. The per-token granularity preserves the dynamic range of attention scores at sequence lengths where per-tensor quantization saturates~\cite{AWQ,smoothquant}.
 
-\subsubsection{ReLU in Place of GELU}
-\label{sec:algo-relu}
-
-The chip implements ReLU rather than GELU~\cite{hendrycks2023GELU} as the FFN activation function. ReLU is a single MSB check on the input and essentially costs no extra cycles or area. GELU, by contrast, would require an additional iterative function unit for its tanh primitive. Fig.~\ref{fig:profile}(d) highlights the cost of executing the original GELU, between $15\%$ and $23\%$ of per-block cycles on its own, and the ReLU substitution eliminates that segment entirely. \rev{Measured in isolation, with every other operator left in its original form, the substitution causes a $0.78\%$ accuracy drop on BERT-base over the General Language Understanding Evaluation (GLUE) benchmark~\cite{wang2019glue}.}
-
 \subsubsection{Approximated Softmax}
 \label{sec:algo-softmax}
 
-The exact softmax, $y_{i}=\exp(x_{i}-x_{\max})/\sum_{j}\exp(x_{j}-x_{\max})$, couples a per-row maximum, an element-wise exponential, and a reciprocal, all of which are expensive on dedicated function units. Following~\cite{meiqi2018softmax}, the inner exponential is restricted to its 8-bit effective range and tabulated in a six-entry look-up, and the reciprocal is folded into a log-sum-exp pass that reuses the same look-up together with a leading-one-detect logarithm. The on-chip pipeline is detailed in Section~\ref{sec:arch-ppe-softmax}. Combined with RFN-fused LN and the ReLU substitution, the three reformulations collapse the $26\%$\,--\,$40\%$ non-linear latency share of Fig.~\ref{fig:profile}(d) into a small fraction of per-block cycles without requiring any iterative function unit.
+The exact softmax, $y_{i}=\exp(x_{i}-x_{\max})/\sum_{j}\exp(x_{j}-x_{\max})$, couples a per-row maximum, an element-wise exponential, and a reciprocal, all of which are expensive on dedicated function units. Following~\cite{meiqi2018softmax}, the inner exponential is restricted to its 8-bit effective range and tabulated in a six-entry look-up, and the reciprocal is folded into a log-sum-exp pass that reuses the same look-up together with a leading-one-detect logarithm. The on-chip pipeline is detailed in Section~\ref{sec:arch-ppe-softmax}. \rev{The approximated softmax is a direct replacement applied at inference only, with no fine-tuning involved.} Combined with RFN-fused LN and the ReLU substitution, the three reformulations collapse the $26\%$\,--\,$40\%$ non-linear latency share of Fig.~\ref{fig:profile}(d) into a small fraction of per-block cycles without requiring any iterative function unit.
 
 
 \begin{table}[!t]
-    \caption{\rev{Hardware-aware BERT-base accuracy on GLUE (dev set, \%).}}
+    \caption{Hardware-aware BERT-base accuracy on GLUE (dev set, \%).}
     \label{tab:bert}
     \centering
     \footnotesize
     \setlength{\tabcolsep}{3pt}
     \begin{tabular*}{\columnwidth}{@{}l@{\extracolsep{\fill}}cccccc@{}}
         \toprule
-        \multirow{2}{*}{\rev{Task}} & \multirow{2}{*}{\rev{FP32}} & \multirow{2}{*}{\rev{W/A}}
-            & \multirow{2}{*}{\rev{SW Acc.}} & \multirow{2}{*}{\rev{HW Acc.}}
-            & \rev{HW Acc.} & \rev{HW Acc.} \\
-            & & & & & \rev{@\,$80\%$} & \rev{@\,$90\%$} \\
+        \multirow{2}{*}{Task} & \multirow{2}{*}{FP32} & \multirow{2}{*}{W/A}
+            & \multirow{2}{*}{SW Acc.} & \multirow{2}{*}{HW Acc.}
+            & HW Acc. & HW Acc. \\
+            & & & & & @\,$80\%$ & @\,$90\%$ \\
         \midrule
-        \rev{QQP}         & \rev{91.06} & \rev{8/8} & \rev{89.59} & \rev{89.33} & \rev{89.11} & \rev{86.52} \\
-        \rev{SST-2}       & \rev{92.66} & \rev{8/8} & \rev{88.99} & \rev{89.56} & \rev{86.93} & \rev{83.49} \\
-        \rev{MNLI-m}      & \rev{84.34} & \rev{8/8} & \rev{83.01} & \rev{83.06} & \rev{79.83} & \rev{75.66} \\
+        QQP         & 91.06 & 8/8 & 89.59 & 89.33 & 89.11 & 86.52 \\
+        SST-2       & 92.66 & 8/8 & 88.99 & 89.56 & 86.93 & 83.49 \\
+        MNLI-m      & 84.34 & 8/8 & 83.01 & 83.06 & 79.83 & 75.66 \\
         \midrule
-        \rev{\textbf{Avg.}} & \rev{\textbf{89.35}} & \rev{\textbf{8/8}} & \rev{\textbf{87.20}} & \rev{\textbf{87.32}} & \rev{\textbf{85.29}} & \rev{\textbf{81.89}} \\
+        \textbf{Avg.} & \textbf{89.35} & \textbf{8/8} & \textbf{87.20} & \textbf{87.32} & \textbf{85.29} & \textbf{81.89} \\
         \bottomrule
     \end{tabular*}
     \vspace{-6pt}
@@ -222,9 +232,9 @@ The exact softmax, $y_{i}=\exp(x_{i}-x_{\max})/\sum_{j}\exp(x_{j}-x_{\max})$, co
 \subsubsection{Model Sparsification}
 \label{sec:algo-prune}
 
-Weights are pruned by magnitude with a sparsity ratio that is gradually ramped during training, following the gradient-based ``prune-and-regrow'' procedure of~\cite{liu2021sparse,CAP2023nips}. Vision transformers tolerate up to $90\%$ element-wise sparsity under this recipe\rev{, at the accuracy cost reported below. Fig.~\ref{fig:profile} shows the corresponding trend for a sensitivity-based pruning rule on a smaller benchmark}. The resulting weight masks are unstructured, which is precisely the regime RRLC absorbs.
+Weights are pruned by magnitude with a sparsity ratio that is gradually ramped during training, following the gradient-based ``prune-and-regrow'' procedure of~\cite{liu2021sparse,CAP2023nips}. Vision transformers tolerate up to $90\%$ element-wise sparsity under this recipe, at the accuracy cost reported below. Fig.~\ref{fig:profile} shows the corresponding trend for a sensitivity-based pruning rule on a smaller benchmark. The resulting weight masks are unstructured, which is precisely the regime RRLC absorbs.
 
-Table~\ref{tab:accuracy} reports the cumulative accuracy of the hardware-aware models on ImageNet-1K\rev{, and Table~\ref{tab:bert} reports the same ladder for BERT-base on GLUE}. The \textbf{SW Acc.} column applies the algorithm-side reformulations of this subsection (INT8 weight/activation quantization, RFN-fused LN, and ReLU in place of GELU) on top of the FP32 baseline. The \textbf{HW Acc.} column additionally accounts for the on-chip softmax LUT approximation. ViT-Small and ViT-Base stay within $1\%$ of their FP32 baselines, while ViT-Tiny, whose smaller capacity leaves less redundancy to absorb the reformulations, shows a $2.3\%$ accuracy drop. \rev{With above techniques applied, no model or task drops more than $3.1\%$ below its FP32 baseline, averaging a $1.3\%$ accuracy drop across the ViT family and $2.0\%$ across the three GLUE tasks. The last two columns of both tables add element-wise weight sparsity on top of that same stack. At $80\%$ sparsity the additional cost is small everywhere, at most a $1.96\%$ drop across the ViT family and $3.23\%$ on BERT-base, which keeps every ViT model within $2.9\%$ of its FP32 baseline. At $90\%$ the drop becomes comparably larger, and it is absorbed in proportion to the redundancy each model carries: ViT-Base drops only $2.27\%$ and still reaches $81.61\%$ top-1 accuracy, whereas ViT-Tiny and ViT-Small drop $4.67\%$ and $4.78\%$. On BERT-base the outcome is task-dependent: QQP drops $2.81\%$ against the dense hardware-aware model and remains within $5\%$ of its FP32 baseline, while MNLI-m, the only three-way classification task of the three, drops $7.40\%$. The $90\%$ operating point at which the chip's peak performance and peak energy efficiency are quoted (Section~\ref{sec:results}) is therefore best matched to the larger models and to the more forgiving tasks, while $80\%$ remains accurate across the entire model set.}
+Table~\ref{tab:accuracy} reports the cumulative accuracy of the hardware-aware models on ImageNet-1K, and Table~\ref{tab:bert} reports the same ladder for BERT-base on GLUE. The \textbf{SW Acc.} column applies the algorithm-side reformulations of this subsection (INT8 weight/activation quantization, RFN-fused LN, and ReLU in place of GELU) on top of the FP32 baseline. The \textbf{HW Acc.} column additionally accounts for the on-chip softmax LUT approximation. ViT-Small and ViT-Base stay within $1\%$ of their FP32 baselines, while ViT-Tiny, whose smaller capacity leaves less redundancy to absorb the reformulations, shows a $2.3\%$ accuracy drop. With above techniques applied, no model or task drops more than $3.1\%$ below its FP32 baseline, averaging a $1.3\%$ accuracy drop across the ViT family and $2.0\%$ across the three GLUE tasks. The last two columns of both tables add element-wise weight sparsity on top of that same stack. At $80\%$ sparsity the additional cost is small everywhere, at most a $1.96\%$ drop across the ViT family and $3.23\%$ on BERT-base, which keeps every ViT model within $2.9\%$ of its FP32 baseline. At $90\%$ the drop becomes comparably larger, and it is absorbed in proportion to the redundancy each model carries: ViT-Base drops only $2.27\%$ and still reaches $81.61\%$ top-1 accuracy, whereas ViT-Tiny and ViT-Small drop $4.67\%$ and $4.78\%$. On BERT-base the outcome is task-dependent: QQP drops $2.81\%$ against the dense hardware-aware model and remains within $5\%$ of its FP32 baseline, while MNLI-m, the only three-way classification task of the three, drops $7.40\%$. The $90\%$ operating point at which the chip's peak performance and peak energy efficiency are quoted (Section~\ref{sec:results}) is therefore best matched to the larger models and to the more forgiving tasks, while $80\%$ remains accurate across the entire model set.
 
 
 \section{Accelerator Architecture}
@@ -239,7 +249,7 @@ Table~\ref{tab:accuracy} reports the cumulative accuracy of the hardware-aware m
     \label{fig:arch}
 \end{figure}
 
-Fig.~\ref{fig:arch} shows the overall accelerator architecture. The micro-architecture of one RMMPE is detailed in Fig.~\ref{fig:rmmpe}. The chip is built around a global memory that holds the RRLC-compressed weight matrix in \rev{Weight Mem} and an output buffer, \rev{Output Mem}, that staggers PPE results before they leave the chip pads. The activation matrix, also stored in RRLC form, is loaded once per A-tile into \rev{the Input Mem inside every RMMPE}. One RMMPE is cascaded with one PPE1, producing $P$ such groups in series. During the multiply-and-accumulate (MAC) phase, weights traverse the chain through a serially connected data bus, so a single weight tile is read once from Weight Mem and reused across all RMMPEs. PPE executes every operation other than MAC. The results enter Output Mem and wait for retrieval through the chip pads.
+Fig.~\ref{fig:arch} shows the overall accelerator architecture. The micro-architecture of one RMMPE is detailed in Fig.~\ref{fig:rmmpe}. The chip is built around a global memory that holds the RRLC-compressed weight matrix in Weight Mem and an output buffer, Output Mem, that staggers PPE results before they leave the chip pads. The activation matrix, also stored in RRLC form, is loaded once per A-tile into the Input Mem inside every RMMPE. One RMMPE is cascaded with one PPE1, producing $P$ such groups in series. During the multiply-and-accumulate (MAC) phase, weights traverse the chain through a serially connected data bus, so a single weight tile is read once from Weight Mem and reused across all RMMPEs. PPE executes every operation other than MAC. The results enter Output Mem and wait for retrieval through the chip pads.
 
 The three architectural knobs that size the compute fabric are $N$, the row dimension of the multiplier array inside one RMMPE; $M$, the column dimension of the same array; and $P$, the number of RMMPEs in the chain. The total instantiated multiplier count is $N{\cdot}M{\cdot}P$, and $M{\cdot}P$ output rows are produced in parallel. The prototype configures $N{=}M{=}P{=}8$.
 
@@ -257,7 +267,7 @@ The three architectural knobs that size the compute fabric are $N$, the row dime
 
 The proposed RMMPE (Fig.~\ref{fig:rmmpe}) carries out the row-wise MAC schedule and stores the accumulating partial sums in a banked accumulation memory (Accumulator Memory). It instantiates $N{\times}M$ multiplier cells, where $N$ is matched to the RRLC group width. Each column of the multiplier array produces one row of the output matrix: Input Mem feeds the $N$ leading elements of the first input row into the first column after the input \textit{Value} stream has been expanded back to dense form. In parallel, $N$ rows of the weight matrix arrive in RRLC form from Weight Mem (for the leading RMMPE) or from the upstream RMMPE (for the rest); the \textit{Value} half feeds the multiplier array while the \textit{Run} half steers the RRLC decoder, also known as \textit{Addr Gen} in Fig.~\ref{fig:rmmpe}. The RRLC decoder translates each \textit{Run} into the destination Accumulator Memory column for the corresponding partial product, so zero weights are skipped at zero cycle cost rather than being multiplied.
 
-The data-mapping example at the top of Fig.~\ref{fig:rmmpe} traces this flow on a small instance. A sparse input matrix and an $N$-row group of weights, both of which contain a mix of non-zero and zero entries, are encoded in RRLC form into a \textit{Value} stream and a \textit{Run} stream. Each row of the $N$-row group emits its non-zero weights into the \textit{Value} half (one weight per multiplier cycle), and emits the count of leading zeros before each non-zero into the matching \textit{Run} half. Cycle by cycle, the RRLC decoder accumulates the run lengths along a row to produce the destination column index in Accumulator Memory, so the first non-zero weight in a row writes to column~$r_{0}$, the second to column~$r_{0}{+}r_{1}{+}1$, and so on; zero weights never enter the multiplier and never consume an Accumulator Memory write port. \rev{In Fig.~\ref{fig:rmmpe} the weight \textit{Run} is drawn in red and the weight \textit{Value} in blue: each \textit{Run} reaches the RRLC decoder one cycle ahead of its \textit{Value} reaching the multiplier array, so the destination address is resolved before the partial product exists. The weight \textit{Value} stream therefore enters the array still in compressed form, and the decompression is carried out by the RRLC decoder in the address domain rather than by expanding the stream.} The four rows of the group advance in lock-step against the same input activation, so the $N$ partial products that share the input element land in $N$ separate accumulator banks during the same cycle. The zoomed-in cell on the right of Fig.~\ref{fig:rmmpe} shows one multiplier and the two registers for pipelining the input and weight streaming.
+The data-mapping example at the top of Fig.~\ref{fig:rmmpe} traces this flow on a small instance. A sparse input matrix and an $N$-row group of weights, both of which contain a mix of non-zero and zero entries, are encoded in RRLC form into a \textit{Value} stream and a \textit{Run} stream. Each row of the $N$-row group emits its non-zero weights into the \textit{Value} half (one weight per multiplier cycle), and emits the count of leading zeros before each non-zero into the matching \textit{Run} half. Cycle by cycle, the RRLC decoder accumulates the run lengths along a row to produce the destination column index in Accumulator Memory, so the first non-zero weight in a row writes to column~$r_{0}$, the second to column~$r_{0}{+}r_{1}{+}1$, and so on; zero weights never enter the multiplier and never consume an Accumulator Memory write port. In Fig.~\ref{fig:rmmpe} the weight \textit{Run} is drawn in red and the weight \textit{Value} in blue: each \textit{Run} reaches the RRLC decoder one cycle ahead of its \textit{Value} reaching the multiplier array, so the destination address is resolved before the partial product exists. The weight \textit{Value} stream therefore enters the array still in compressed form, and the decompression is carried out by the RRLC decoder in the address domain rather than by expanding the stream. The four rows of the group advance in lock-step against the same input activation, so the $N$ partial products that share the input element land in $N$ separate accumulator banks during the same cycle. The zoomed-in cell on the right of Fig.~\ref{fig:rmmpe} shows one multiplier and the two registers for pipelining the input and weight streaming.
 
 Every multiplier owns a private bank of Accumulator Memory. When MAC for a tile finishes, the $N$ banks pop out the N running partial sums of one output row, and an adder tree reduces them to the final row values. The $N$ addresses and $N$ \textit{Values} simultaneously propagate to the next column of the array, so $M$ output rows materialize in parallel across the multiplier array. The depth of Accumulator Memory caps the achievable column count per tile; the prototype configures it to $128$, a value that may be enlarged at the cost of additional SRAM area. 
 % Because the row-wise schedule consumes every weight tile across the entire chain before moving on, the RMMPE stores activations stationary in its local Input Mem and lets weights stream: duplicating weights per PE would be wasteful, while reusing one activation tile across multiple weight tiles is exactly the row-wise reuse pattern.
@@ -304,6 +314,8 @@ The softmax mode realizes the log-sum-exp form as a fixed-point dataflow that re
     \label{eq:softmax}
 \end{equation}
 The on-die pipeline is shown in Fig.~\ref{fig:softmax}(b), which is color-coded into five stages: \textbf{diff} (red), \textbf{sum} (yellow), \textbf{ln} (purple), \textbf{minus} (blue), and \textbf{exp} (green). Softmax Memory is $1,024$ entries deep and $3$ bits wide, which is sized to hold one full attention row of up to $1,024$ tokens. For longer token sequences, FlashAttention~\cite{Dao2022flashattention} style softmax tiling scheme can be adopted to recover the full sequence softmax score from tiled partial softmax scores off-die.
+\rev{This design integrates the softmax arithmetic of~\cite{meiqi2018softmax} into the GEMM datapath rather than instantiating it as a standalone special-function unit: the scores are drained from Accumulator Memory through the adder tree the GEMM already uses plus a single max register, Softmax Memory holds only the 3-bit clipped differences, and the Softmax Memory drains overlap the next GEMM, as the following drain-by-drain description details.}
+
 \emph{First Accumulator Memory drain.} The first drain of Accumulator Memory reduces the multiplier-bank partial sums through the per-row adder tree and pushes the resulting $X_i$ values into PPE1's max register, yielding $X_{\max,\ell}$, the maximum of the $128$ elements held in the current Accumulator Memory row. This drain is bookkeeping only and is not drawn in Fig.~\ref{fig:softmax}(b).
 
 \emph{Second Accumulator Memory drain (diff).} The second drain re-streams the reduced $X_i$ values into the red \textbf{diff} block in Fig.~\ref{fig:softmax}(b). The block forms $X_{\max,\ell} - X_i$ and applies the threshold comparator: any value larger than $6$ would round $\exp(X_i - X_{\max})$ to zero under the 8-bit quantization budget (Fig.~\ref{fig:softmax}(a)) and is clipped before the Softmax Memory write, while the surviving values lie in $[0, 6]$ and fit in the $3$-bit-wide Softmax Memory cell. The \textbf{diff} stage simultaneously records this segment's $X_{\max,\ell}$ into a small per-segment register file. Since one Accumulator Memory row holds $128$ entries, an attention row of length $L > 128$ is processed in $\lceil L/128 \rceil$ %such 
@@ -359,12 +371,12 @@ An additional opportunity, untapped in the single-chip prototype, is the paralle
 
 Sparsity awareness reduces both external-memory traffic and on-chip cycles: the multiplications between zero weights and their corresponding activation elements are skipped, and the RRLC \textit{Run} pointer drives the RRLC decoder so that zero MACs never enter the multiplier array. The pattern is element-wise unstructured, so the algorithm side retains full freedom over which weights to drop.
 
-\rev{The prototype consumes pre-encoded streams, with weights encoded once per model offline and activations encoded by the host. Encoding is nonetheless a streaming, local transform, needing per lane only a zero comparator, an $R$-bit run counter and a write-address counter alongside a per-group length tracker, so it can equally be placed on the PPE output path. A result matrix would then leave the chip already in RRLC form, ready to serve as the next layer's activations. In synthesis such an encoder occupies only $0.24\%$ of the area and $0.33\%$ of the power of one cluster of an RMMPE and a PPE1. It is a proposed extension and is not part of the taped-out prototype.}
+The prototype consumes pre-encoded streams, with weights encoded once per model offline and activations encoded by the host. Encoding is nonetheless a streaming, local transform, needing per lane only a zero comparator, an $R$-bit run counter and a write-address counter alongside a per-group length tracker, so it can equally be placed on the PPE output path. A result matrix would then leave the chip already in RRLC form, ready to serve as the next layer's activations. In synthesis such an encoder occupies only $0.24\%$ of the area and $0.33\%$ of the power of one cluster of an RMMPE and a PPE1. \rev{This encoder is not part of the taped-out chip. In the prototype, the re-encoding of intermediate activations is completed by the host.}
 
 \subsubsection{Non-Linearity}
 \label{sec:arch-challenges-nonlinearity}
 
-The PPE approximates every non-linear function with multiplications, additions, and shifts: the softmax LUT and leading-one-detect logarithm, the RFN fusion, and the single-comparator ReLU. The chip executes the residual non-linear path without leaving the on-die fabric, at the accuracy budget reported in Table~\ref{tab:accuracy}.
+The PPE approximates every non-linear function with multiplications, additions, and shifts: the softmax LUT and leading-one-detect logarithm, the RFN fusion, and the single-comparator ReLU.
 
 \begin{figure}[!t]
     \centering
@@ -376,40 +388,41 @@ The PPE approximates every non-linear function with multiplications, additions, 
 
 \begin{figure}[!t]
     \centering
-    \includegraphics[width=0.9\columnwidth,page=6,trim=1 1 1 1,clip]{figures/TVLSI_drawing.pdf}
-    \vspace{-10pt}
+    \includegraphics[width=0.9\columnwidth,page=6,trim=1 1 1 9,clip]{figures/TVLSI_drawing.pdf}
+    \vspace{-12pt}
     \caption{Silicon measurement setup.}
-    \vspace{-10pt}
+    \vspace{-3pt}
     \label{fig:setup}
 \end{figure}
 
 \begin{table}[!t]
-    \caption{\rev{Post-layout area and power breakdown of the core.}}
+    \caption{Post-layout area and power breakdown of the core.}
     \label{tab:breakdown}
     \centering
     \footnotesize
     \setlength{\tabcolsep}{3pt}
     \begin{tabular*}{\columnwidth}{@{}ll@{\extracolsep{\fill}}rr@{}}
         \toprule
-        \rev{Module} & \rev{Sub-module} & \rev{Area (\%)} & \rev{Power (\%)} \\
+        Module & Sub-module & Area (\%) & Power (\%) \\
         \midrule
-        \multirow{6}{*}{\rev{RMMPE ($\times$8)}}
-            & \rev{Multiplier array}   & \rev{2.52}  & \rev{19.06} \\
-            & \rev{Accumulator Memory} & \rev{82.68} & \rev{47.24} \\
-            & \rev{RRLC decoder}       & \rev{0.16}  & \rev{2.25}  \\
-            & \rev{Input Mem}          & \rev{3.33}  & \rev{2.10}  \\
-            & \rev{Other}              & \rev{0.14}  & \rev{1.91}  \\
-            & \rev{\textit{total}}     & \rev{\textit{88.83}} & \rev{\textit{72.56}} \\
+        \multirow{6}{*}{RMMPE ($\times$8)}
+            & Multiplier array   & 2.52  & 19.06 \\
+            & Accumulator Memory & 82.68 & 47.24 \\
+            & RRLC decoder       & 0.16  & 2.25  \\
+            & Input Mem          & 3.33  & 2.10  \\
+            & Other              & 0.14  & 1.91  \\
+            & \textit{total}     & \textit{88.83} & \textit{72.56} \\
         \midrule
-        \multirow{3}{*}{\rev{PPE}}
-            & \rev{PPE1 ($\times$8)}   & \rev{4.77}  & \rev{25.11} \\
-            & \rev{PPE2}               & \rev{0.40}  & \rev{0.98}  \\
-            & \rev{\textit{total}}     & \rev{\textit{5.17}}  & \rev{\textit{26.09}} \\
+        \multirow{3}{*}{PPE}
+            & PPE1 ($\times$8)   & 4.77  & 25.11 \\
+            & PPE2               & 0.40  & 0.98  \\
+            & \textit{total}     & \textit{5.17}  & \textit{26.09} \\
         \midrule
-        \rev{Global Mem}  & \rev{Global Mem}  & \rev{3.23} & \rev{0.26} \\
-        \rev{Peripherals} & \rev{Peripherals} & \rev{2.77} & \rev{1.09} \\
+        Global Mem  & Global Mem  & 3.23 & 0.26 \\
+        Peripherals & Peripherals & 2.77 & 1.09 \\
         \bottomrule
     \end{tabular*}
+    \vspace{-3pt}
 \end{table}
 
 \section{Silicon Implementation and Results}
@@ -421,25 +434,16 @@ We prototyped the proposed sparse transformer accelerator in TSMC~28\,nm CMOS, w
 \label{sec:results-die}
 
 
+\input{tables/vi_a_summary.tex}
+
 
 Fig.~\ref{fig:die} shows the annotated die micrograph of the 28\,nm prototype. The eight RMMPE tiles, each paired with its PPE1, are placed around the global weight memory in a ring that supports the cascaded weight streaming bus. The prototype chip occupies a $9.26$\,mm$^{2}$ area in TSMC 28\,nm CMOS, with $317$\,KB of on-chip SRAM.
 
-\rev{Table~\ref{tab:breakdown} breaks the core down by block. Area is dominated by SRAM: the Accumulator Memory banks alone account for $82.7\%$, so the compute fabric and the whole non-linear pipeline together occupy under $8\%$. Power redistributes toward the active blocks, with the multiplier array at $19.1\%$ and PPE1 at $25.1\%$. The RRLC decoder, the hardware that this format adds to a dense datapath, takes only $0.16\%$ of core area and $2.25\%$ of core power, or $6.4\%$ of the area of the multiplier array.}
+Table~\ref{tab:breakdown} breaks the core down by block. Area is dominated by SRAM: the Accumulator Memory banks alone account for $82.7\%$, so the compute fabric and the whole non-linear pipeline together occupy under $8\%$. Power redistributes toward the active blocks, with the multiplier array at $19.1\%$ and PPE1 at $25.1\%$. The RRLC decoder, the hardware that this format adds to a dense datapath, takes only $0.16\%$ of core area and $2.25\%$ of core power, or $6.4\%$ of the area of the multiplier array.
 
-Fig.~\ref{fig:setup} shows the measurement setup. The chip is mounted on a test PCB and driven by a host FPGA that handles I/O streaming and control logic. The FPGA in turn is configured from a host PC that issues the test vectors and reads back the inference output. A power supply provides the power, an oscilloscope probes the on-die signals brought out to the pad ring, and an energy analyzer (Joulescope) measures voltage and current.
+Fig.~\ref{fig:setup} shows the measurement setup. The chip is mounted on a test PCB and driven by a host FPGA that handles I/O streaming and control logic. The FPGA in turn is configured from a host PC that issues the test vectors and reads back the inference output. \rev{GEMM and PPE operators are mapped on the chip with weights and activations supplied in RRLC form. The pruned weights are encoded into RRLC once offline and loaded as-is. Intermediate activations return to the host, which re-encodes them for the next operator.} A power supply provides the power, an oscilloscope probes the on-die signals brought out to the pad ring, and an energy analyzer (Joulescope) measures voltage and current. \rev{All throughput, power, and energy values are measured on the chip only.}
 
 Under this setup we characterize the chip at nine operating points across the~$0.75$\,--\,$1.10$\,V logic-supply range. Table~\ref{tab:summary} summarizes the chip specification, and Fig.~\ref{fig:vf} plots peak frequency (left axis) and total chip power (right axis) versus logic supply at the six supply-scaled points. Peak frequency rises from~$112.6$\,MHz at $0.75$\,V to~$400$\,MHz at $1.10$\,V, while total power scales from~$37.2$\,mW to~$244.2$\,mW over the same voltage range. The full~$24$\,--\,$400$\,MHz envelope in Table~\ref{tab:summary} extends below~$112.6$\,MHz by sharing the~$0.75$\,V floor, useful for low-throughput inference. At the $1.10$\,V, $400$\,MHz peak-performance corner, the chip delivers $1.634$\,TOPS on a $90\,\%$-sparse workload, giving an area efficiency of $0.176$\,TOPS/mm$^{2}$. At the peak-efficiency operating point of $0.77$\,V, $183$\,MHz, the same $90\,\%$ sparsity yields $20.32$\,TOPS/W on ViT-Base (ImageNet-1K) and $21.93$\,TOPS/W on BERT-base (GLUE).
-
-\input{tables/vi_a_summary.tex}
-
-\begin{figure}[!t]
-    \centering
-    \includegraphics[width=\columnwidth]{figures_analysis/vf_scaling.pdf}
-    \vspace{-20pt}
-    \caption{Measured peak frequency (left axis, blue) and total chip power (right axis, red) versus logic supply voltage over the prototype's supply-scaled operating points.}
-    \vspace{-15pt}
-    \label{fig:vf}
-\end{figure}
 
 \subsection{Sparsity}
 \label{sec:results-sparsity}
@@ -456,6 +460,22 @@ At~$90\%$ sparsity the gap stays at $1.4$\% %,pp
 for ViT-Base. ViT-Tiny, with its smaller redundancy budget, reaches a $1.8$\% %,pp 
 accuracy drop already at $75\%$ sparsity and is the model with the steepest accuracy decline. At each model's best practical sparse operating point, the executed GOPs reduce by $2.20\times$ for ViT-Tiny at $75\%$ sparsity, $2.74\times$ for ViT-Small at $80\%$ sparsity, and $3.99\times$ for ViT-Base.
 
+
+\begin{figure}[!t]
+    \centering
+    \includegraphics[width=\columnwidth]{figures_analysis/vf_scaling.pdf}
+    \vspace{-20pt}
+    \caption{Measured peak frequency (left axis, blue) and total chip power (right axis, red) versus logic supply voltage over the prototype's supply-scaled operating points.}
+    \vspace{-15pt}
+    \label{fig:vf}
+\end{figure}
+
+
+\subsubsection{Speedup and Energy across Sparse Models}
+\label{sec:results-sparsity-energy}
+A further evaluation of the sparsity impact on the on-chip execution of ViT-Small, ViT-Base, and BERT-base is shown in Fig.~\ref{fig:sparsity-energy}. The five bars for each model correspond to the dense baseline and the four sparsity ratios of $60\%$, $70\%$, $80\%$, and $90\%$. ImageNet-1K classification is the task for the ViT models, and a $128$-token GLUE-style input is the task for BERT-base.
+
+
 \begin{figure}[!t]
     \centering
     \includegraphics[width=\columnwidth]{figures/FLOPs_vs_Accuracy.png}
@@ -465,10 +485,12 @@ accuracy drop already at $75\%$ sparsity and is the model with the steepest accu
     \label{fig:flops-acc}
 \end{figure}
 
-\subsubsection{Speedup and Energy across Sparse Models}
-\label{sec:results-sparsity-energy}
-A further evaluation of the sparsity impact on the on-chip execution of ViT-Small, ViT-Base, and BERT-base is shown in Fig.~\ref{fig:sparsity-energy}. The five bars for each model correspond to the dense baseline and the four sparsity ratios of $60\%$, $70\%$, $80\%$, and $90\%$. ImageNet-1K classification is the task for the ViT models, and a $128$-token GLUE-style input is the task for BERT-base. 
-%The three subplots show (a)~the whole-model FLOPs-reduction speedup, (b)~the per-inference on-chip energy at the peak-performance operating point, and (c)~the RRLC-compressed weight EMA per inference.
+Fig.~\ref{fig:sparsity-energy}(a) shows that the overall model speedup rises monotonically with sparsity for every model, reaching $5.07\times$ on ViT-Small, $6.09\times$ on ViT-Base, and $6.57\times$ on BERT-base at $90\%$ sparsity. The speedup is highest for the model with the largest sparsifiable (FFN) FLOPs fraction, because the attention matrix multiplications $Q\!\cdot\!K^{\top}$ and $A\!\cdot\!V$ have no weight matrix and pass through unsparsified, forming a fixed floor that caps the attainable speedup. ViT-Small carries $7.9\%$ of its per-block FLOPs in those unsparsified operations (the smaller hidden dimension $H{=}384$ leaves less compute in the four weighted GEMMs), versus $4.1\%$ for ViT-Base and only $2.7\%$ for BERT-base whose shorter sequence shrinks the attention contribution. Consequently, as shown in Fig.~\ref{fig:sparsity-energy}(a), the speedup is highest for BERT-base, followed by ViT-Base and ViT-Small models. Above $87.5\%$ sparsity, the mean gap between non-zeros ($=s/(1{-}s)$) 
+exceeds the 3-bit \textit{Run} cap of $7$, and the encoder must insert placeholder \textit{Run}${=}7$ tuples to bridge longer runs. The padding factor (tuples consumed per real non-zero) reaches $9/7 \approx 1.29\times$ at $90\%$ sparsity, which divides the ideal sparsity saving by $1.29$ and clips the FLOPs reduction by $1 - 1/1.29 \approx 22\%$ on the weighted ops. The absolute speedup at $90\%$ sparsity still grows monotonically from the $80\%$ bar, but falls $1.5\times$\,--\,$2\times$ short of the ideal $1/(1{-}s) = 10\times$ that a padding-free encoding would deliver.
+
+Fig.~\ref{fig:sparsity-energy}(b) translates the compute-reduction trend into per-inference on-chip energy. Each sparse bar is annotated with its ratio to the dense baseline, which equals the inverse of the speedup because compute time and the $P_{\text{total}}{\times}t$ energy product scale linearly with the compressed-FLOPs count. At $90\%$ sparsity, the energy drops to $0.20\times$ for ViT-Small, $0.16\times$ for ViT-Base, and $0.15\times$ for BERT-base, i.e., a $5{-}7\times$ energy reduction relative to dense execution on the same chip. The dense-normalized ratios on top of the sparse bars are invariant to the chosen operating point: the absolute energies at the peak-efficiency operating point are about half of those shown here, but the per-model ratios are unchanged.
+
+Fig.~\ref{fig:sparsity-energy}(c) shows the RRLC-compressed weight EMA per inference. Under the $8$-bit \textit{Value} plus $3$-bit \textit{Run} encoding ($11$ bits per non-zero), the compressed weight footprint falls from the INT8 dense baseline of $22$, $86$, and $110$\,MB for ViT-Small, ViT-Base, and BERT-base to $6.05$, $23.65$, and $30.25$\,MB at $80\%$ sparsity ($3.6\times$ smaller), and to $3.89$, $15.20$, and $19.45$\,MB at $90\%$ sparsity ($5.7\times$ smaller). The marginal saving from $80\%$ to $90\%$ is smaller than from $60\%$ to $80\%$ because of the same RRLC padding factor that clips the speedup curve in Fig.~\ref{fig:sparsity-energy}(a).
 
 \begin{figure}[!t]
     \centering
@@ -476,15 +498,6 @@ A further evaluation of the sparsity impact on the on-chip execution of ViT-Smal
     \caption{Sparsity impact on ViT-Small, ViT-Base, and BERT-base at the dense baseline and the four sparsity ratios. (a)~Whole-model FLOPs-reduction speedup. (b)~Per-inference on-chip energy at the peak-performance operating point. (c)~RRLC-compressed weight EMA per inference. Inference is batch-1 ImageNet-1K for the ViT models and a $128$-token GLUE-style input for BERT-base.}
     \label{fig:sparsity-energy}
 \end{figure}
-
-Fig.~\ref{fig:sparsity-energy}(a) shows that the overall model speedup rises monotonically with sparsity for every model, reaching $5.07\times$ on ViT-Small, $6.09\times$ on ViT-Base, and $6.57\times$ on BERT-base at $90\%$ sparsity. The speedup is highest for the model with the largest sparsifiable (FFN) FLOPs fraction, because the attention matrix multiplications $Q\!\cdot\!K^{\top}$ and $A\!\cdot\!V$ have no weight matrix and pass through unsparsified, forming a fixed floor that caps the attainable speedup. ViT-Small carries $7.9\%$ of its per-block FLOPs in those unsparsified operations (the smaller hidden dimension $H{=}384$ leaves less compute in the four weighted GEMMs), versus $4.1\%$ for ViT-Base and only $2.7\%$ for BERT-base whose shorter sequence shrinks the attention contribution. Consequently, as shown in Fig.~\ref{fig:sparsity-energy}(a), the speedup is highest for BERT-base, followed by ViT-Base and ViT-Small models.
-%the speedup orders BERT-base, ViT-Base, and ViT-Small in Fig.~\ref{fig:sparsity-energy}(a). 
-Above $87.5\%$ sparsity, the mean gap between non-zeros ($=s/(1{-}s)$) %first 
-exceeds the 3-bit \textit{Run} cap of $7$, and the encoder must insert placeholder \textit{Run}${=}7$ tuples to bridge longer runs. The padding factor (tuples consumed per real non-zero) reaches $9/7 \approx 1.29\times$ at $90\%$ sparsity, which divides the ideal sparsity saving by $1.29$ and clips the FLOPs reduction by $1 - 1/1.29 \approx 22\%$ on the weighted ops. The absolute speedup at $90\%$ sparsity still grows monotonically from the $80\%$ bar, but falls $1.5\times$\,--\,$2\times$ short of the ideal $1/(1{-}s) = 10\times$ that a padding-free encoding would deliver.
-
-Fig.~\ref{fig:sparsity-energy}(b) translates the compute-reduction trend into per-inference on-chip energy. Each sparse bar is annotated with its ratio to the dense baseline, which equals the inverse of the speedup because compute time and the $P_{\text{total}}{\times}t$ energy product scale linearly with the compressed-FLOPs count. At $90\%$ sparsity, the energy drops to $0.20\times$ for ViT-Small, $0.16\times$ for ViT-Base, and $0.15\times$ for BERT-base, i.e., a $5{-}7\times$ energy reduction relative to dense execution on the same chip. The dense-normalized ratios on top of the sparse bars are invariant to the chosen operating point: the absolute energies at the peak-efficiency operating point are about half of those shown here, but the per-model ratios are unchanged.
-
-Fig.~\ref{fig:sparsity-energy}(c) shows the RRLC-compressed weight EMA per inference. Under the $8$-bit \textit{Value} plus $3$-bit \textit{Run} encoding ($11$ bits per non-zero), the compressed weight footprint falls from the INT8 dense baseline of $22$, $86$, and $110$\,MB for ViT-Small, ViT-Base, and BERT-base to $6.05$, $23.65$, and $30.25$\,MB at $80\%$ sparsity ($3.6\times$ smaller), and to $3.89$, $15.20$, and $19.45$\,MB at $90\%$ sparsity ($5.7\times$ smaller). The marginal saving from $80\%$ to $90\%$ is smaller than from $60\%$ to $80\%$ because of the same RRLC padding factor that clips the speedup curve in Fig.~\ref{fig:sparsity-energy}(a).
 
 \subsubsection{Unstructured vs.~Structured Sparsity}
 \label{sec:results-sparsity-struct}
@@ -572,19 +585,19 @@ The architecture-level constraint reduction translates directly into measured th
 
 Table~\ref{tab:comparison} compares our chip against four recent transformer accelerators~\cite{Yang2022isscc, Thierry2023isscc, Li2025SparseTrim, Fan2025MultiTaskTransformer}.
 %accelerator~1 (ISSCC'22~\cite{Yang2022isscc}), accelerator~2 (ISSCC'23~\cite{Thierry2023isscc}), accelerator~3 (CICC'25~\cite{Li2025SparseTrim}), and accelerator~4 (VLSI'25~\cite{Fan2025MultiTaskTransformer}). 
-This chip supports arbitrary unstructured sparsity together with an on-die linearized non-linear pipeline, the combination needed to execute a full transformer end-to-end on the same fabric. Against \cite{Thierry2023isscc} and \cite{Fan2025MultiTaskTransformer}, %accelerators~2 and~4, 
+Against \cite{Thierry2023isscc} and \cite{Fan2025MultiTaskTransformer}, %accelerators~2 and~4, 
 our chip is better on all three headline metrics: peak performance ($1.634$\,TOPS vs.~$0.367$ and $0.92$\,TOPS), peak energy efficiency ($20.32$\,--\,$21.93$\,TOPS/W vs.~$8.24$ and $12.52$\,TOPS/W), and peak area efficiency ($0.176$ vs.~$0.0798$ and $0.159$\,TOPS/mm$^{2}$). 
 This chip's energy efficiency is $1.62\times$\,--\,$2.47\times$ higher than \cite{Thierry2023isscc, Fan2025MultiTaskTransformer}. 
 %accelerators~2 and~4. 
 Both \cite{Yang2022isscc} and \cite{Li2025SparseTrim} %Accelerators~1 and~3  
-report their headline metrics (up to $4.07$\,TOPS, $51.8$\,TOPS/W, and $0.597$\,TOPS/mm$^{2}$) at a matmul-pair operating point with $90\%$ sparsity on \emph{both} weight and activation, an isolated peak that not every matmul inside a transformer block can hit. In particular, most layers cannot bear high sparsity simultaneously on both the activation and the weight sides. Our results reported here are model-averaged values, instead of peak sparse-matmul values. \rev{The energy efficiency evaluated at $50\%$ sparsity is $6.41$\,--\,$6.50$\,TOPS/W, which is comparable to~\cite{Thierry2023isscc}'s $8.24$\,TOPS/W at the same sparsity level, obtained in a more advanced $12$\,nm process against our $28$\,nm. Furthermore, our number is based on weight sparsity, which saves more external memory access compared to its input sparsity.}
+report their headline metrics (up to $4.07$\,TOPS, $51.8$\,TOPS/W, and $0.597$\,TOPS/mm$^{2}$) at a matmul-pair operating point with $90\%$ sparsity on \emph{both} weight and activation, an isolated peak that not every matmul inside a transformer block can hit. In particular, most layers cannot bear high sparsity simultaneously on both the activation and the weight sides. Our results reported here are model-averaged values, instead of peak sparse-matmul values. The energy efficiency evaluated at $50\%$ sparsity is $6.41$\,--\,$6.50$\,TOPS/W, which is comparable to~\cite{Thierry2023isscc}'s $8.24$\,TOPS/W at the same sparsity level, obtained in a more advanced $12$\,nm process against our $28$\,nm. Furthermore, our number is based on weight sparsity, which saves more external memory access compared to its input sparsity.
 
 % =========================================================================
 \section{Conclusion}
 \label{sec:conclusion}
 
 This paper presented a 28\,nm sparse transformer accelerator that addresses the four design challenges of transformer-targeted hardware: scalability, flexibility, sparsity-compatibility, and on-chip non-linearity. Our chip applies row-wise matrix multiplication on a row-wise run-length-coded operand stream to handle the heterogeneous matrix shapes and to accelerate unstructured sparsity. The %extendedly supported 
-column-wise matrix multiplication further improves the flexibility and efficiency for model deployment. It linearizes softmax, layer normalization and other non-linear functions. Measured silicon achieves~$20.32$\,TOPS/W on ViT-Base and~$21.93$\,TOPS/W on BERT-base at~$90\,\%$ sparsity at the peak-efficiency operating point. This chip is $1.62\times$--$2.47\times$ better in energy efficiency compared to other sparse transformer accelerators at same sparsity configuration and level. Our chip demonstrates that arbitrary unstructured sparsity and the residual non-linearities of transformer inference can both be handled inside a single sparse-matmul fabric without resorting to off-chip arithmetic or structurally restricted sparsity patterns.
+column-wise matrix multiplication further improves the flexibility and efficiency for model deployment. \rev{It executes softmax, layer normalization, and the activation function on die, with the softmax approximation embedded in the GEMM dataflow rather than in a standalone unit.} Measured silicon achieves~$20.32$\,TOPS/W on ViT-Base and~$21.93$\,TOPS/W on BERT-base at~$90\,\%$ sparsity at the peak-efficiency operating point. This chip is $1.62\times$--$2.47\times$ better in energy efficiency compared to other sparse transformer accelerators at same sparsity configuration and level. Our chip demonstrates that arbitrary unstructured sparsity and the residual non-linearities of transformer inference can both be handled inside a single sparse-matmul fabric without resorting to off-chip arithmetic or structurally restricted sparsity patterns.
 
 % Render URLs/DOIs in the bibliography as plain monospace text (no clickable
 % hyperlink). \cite{} links in the body of the paper remain clickable.
