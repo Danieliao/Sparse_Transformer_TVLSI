@@ -20,14 +20,14 @@
 % Revision highlighting.  \rev{...} marks revised text in blue; \revfig{...}
 % draws a red box around a revised figure.  To produce the camera-ready
 % (unhighlighted) version, redefine both as identity:
-%   \renewcommand{\rev}[1]{#1}   \renewcommand{\revfig}[1]{#1}
+  \renewcommand{\rev}[1]{#1}   \renewcommand{\revfig}[1]{#1}
 % ---------------------------------------------------------------------------
-\newcommand{\rev}[1]{\textcolor{blue}{#1}}
-\newcommand{\revfig}[1]{%
-    \begingroup
-    \setlength{\fboxsep}{3pt}\setlength{\fboxrule}{1pt}%
-    \textcolor{red}{\fbox{\textcolor{black}{#1}}}%
-    \endgroup}
+% \newcommand{\rev}[1]{\textcolor{blue}{#1}}
+% \newcommand{\revfig}[1]{%
+%     \begingroup
+%     \setlength{\fboxsep}{3pt}\setlength{\fboxrule}{1pt}%
+%     \textcolor{red}{\fbox{\textcolor{black}{#1}}}%
+%     \endgroup}
 
 \begin{document}
 
