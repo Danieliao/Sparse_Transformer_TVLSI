@@ -20,14 +20,14 @@
 % Revision highlighting.  \rev{...} marks revised text in blue; \revfig{...}
 % draws a red box around a revised figure.  To produce the camera-ready
 % (unhighlighted) version, redefine both as identity:
-  % \renewcommand{\rev}[1]{#1}   \renewcommand{\revfig}[1]{#1}
+  \newcommand{\rev}[1]{#1}   \newcommand{\revfig}[1]{#1}
 % ---------------------------------------------------------------------------
-\newcommand{\rev}[1]{\textcolor{blue}{#1}}
-\newcommand{\revfig}[1]{%
-    \begingroup
-    \setlength{\fboxsep}{3pt}\setlength{\fboxrule}{1pt}%
-    \textcolor{red}{\fbox{\textcolor{black}{#1}}}%
-    \endgroup}
+% \newcommand{\rev}[1]{\textcolor{blue}{#1}}
+% \newcommand{\revfig}[1]{%
+%     \begingroup
+%     \setlength{\fboxsep}{3pt}\setlength{\fboxrule}{1pt}%
+%     \textcolor{red}{\fbox{\textcolor{black}{#1}}}%
+%     \endgroup}
 
 \begin{document}
 
@@ -133,7 +133,7 @@ RRLC (Fig.~\ref{fig:rwp-rrlc}(b)) is a multi-row variant of run-length coding. T
 
 The choice of three \textit{Run} bits is the empirical optimum for the $75\%$\,--\,$90\%$ sparsity regime targeted by sensitivity-aware pruning of both language and vision transformers. Fig.~\ref{fig:rrlc-storage} quantifies the trade-off on \rev{the FFN weights of} ViT-Base: $R{=}3$ RRLC achieves $2.7\times$, $3.4\times$, \rev{$4.4\times$}, and $5.1\times$ savings at $75\%$, $80\%$, $85\%$, and $90\%$ sparsity, respectively. $R{=}2$ peaks at $75\%$ sparsity and then plateaus around $2.5\times$ as the $3$-state \textit{Run} field underflows the average run length. $R{=}4$ extends the linear regime further out but pays a per-tuple overhead at every sparsity below $\sim$88$\%$, only surpassing $R{=}3$ at $90\%$ sparsity. Tables~\ref{tab:accuracy} and~\ref{tab:bert} identify $80\%$ sparsity as the balanced point between accuracy and compression, which sits below that crossover and therefore favors $R{=}3$ over $R{=}4$. The dashed RLC curves are the row-by-row encoding upper bound. RRLC pays a small inter-row-alignment premium ($\sim 6\%$ at $70\%$ sparsity, growing to $\sim$11$\%$ at $90\%$) for the privilege of decoding $N$ rows on a parallel multiplier array. RRLC encoding is performed once per model with the sparse weight offline, and its cost is therefore amortized away from inference. \rev{In the fabricated prototype, activations are likewise supplied in RRLC form, encoded by the host between layers.} The RRLC decoder consumes the \textit{Run} stream to drive accumulator addresses, so the multiplier array sees only non-zero weights even though it executes a dense schedule on \textit{Value}.
 
-\rev{Fig.~\ref{fig:rrlc-storage}(b) places RRLC against the other common sparse formats under the same storage model at $R{=}3$. The ordering follows the metadata cost per non-zero. COO and CSC carry indices of the matrix dimension ($22$ and $11$ bits for ViT-Base), so their savings are bounded by the index width rather than by the sparsity. A bitmap costs one mask bit per element, i.e., $1/(1-s)$ bits per non-zero, growing from $5$ bits at $80\%$ to $10$ bits at $90\%$. RRLC costs $3$ bits per retained element plus bounded padding, so it overtakes the bitmap from $73\%$ sparsity onward: $3.4\times$ versus $3.1\times$ at $80\%$ and $5.1\times$ versus $4.4\times$ at $90\%$. Below that crossover the bitmap is more compact, but outside the $75\%$\,--\,$90\%$ range targeted here. Storage is, however, not the decisive criterion: all three alternatives yield their non-zeros serially, whereas the RRLC decoder issues $N$ non-zeros to $N$ multiplier lanes every cycle from a single memory word, with one $R$-bit accumulator per lane and no index that scales with the matrix size.}
+\rev{Fig.~\ref{fig:rrlc-storage}(b) places RRLC against the other common sparse formats under the same storage model at $R{=}3$. The compression ratio follows the metadata cost per non-zero. COO and CSC carry indices of the matrix dimension ($22$ and $11$ bits for ViT-Base), so their savings are bounded by the index width rather than by the sparsity. A bitmap costs one mask bit per element, i.e., $1/(1-s)$ bits per non-zero, growing from $5$ bits at $80\%$ to $10$ bits at $90\%$. RRLC costs $3$ bits per retained element plus bounded padding, so it overtakes the bitmap from $73\%$ sparsity onward: $3.4\times$ versus $3.1\times$ at $80\%$ and $5.1\times$ versus $4.4\times$ at $90\%$. RRLC outperforms bitmap at targeted $75\%$\,--\,$90\%$ sparsity range for transformer models suggested by Fig.~\ref{fig:profile}. Storage is, however, not the decisive criterion: all three alternatives yield their non-zeros serially, whereas the RRLC decoder issues $N$ non-zeros to $N$ multiplier lanes every cycle from a single memory word, with one $R$-bit accumulator per lane and no index that scales with the matrix size.}
 
 \rev{Two recent accelerators show the same trade-off. The programmable-dataflow design of~\cite{Schneider2024TCASI} keeps weights run-length coded off chip but decompresses each tile into an uncompressed, bitmask-tagged L1 so that any loop order can address it, reserving the bitmask for activations near $50\%$ sparsity. RRLC, in contrast, stays compressed up to the multiplier. Mentha~\cite{Tang2022Mentha} merges rows with non-overlapping non-zeros into one packed row, each element tagged with its source row, so that a 2D systolic array processes fewer, denser rows and a reconfigured PE steers each product to one of up to $T$ accumulators by the tag. Its speedup is thus bounded by $T$ rather than by the sparsity, unfilled columns still occupy array slots, and a packing pass is needed, whereas the row-wise product skips every zero weight natively.}
 
