@@ -11,15 +11,11 @@ author = {Brown, Tom B. and Mann, Benjamin and Ryder, Nick and Subbiah, Melanie 
 title = {Language models are few-shot learners},
 year = {2020},
 isbn = {9781713829546},
-publisher = {Curran Associates Inc.},
-address = {Red Hook, NY, USA},
 abstract = {We demonstrate that scaling up language models greatly improves task-agnostic, few-shot performance, sometimes even becoming competitive with prior state-of-the-art fine-tuning approaches. Specifically, we train GPT-3, an autoregressive language model with 175 billion parameters, 10x more than any previous non-sparse language model, and test its performance in the few-shot setting. For all tasks, GPT-3 is applied without any gradient updates or fine-tuning, with tasks and few-shot demonstrations specified purely via text interaction with the model. GPT-3 achieves strong performance on many NLP datasets, including translation, question-answering, and cloze tasks. We also identify some datasets where GPT-3's few-shot learning still struggles, as well as some datasets where GPT-3 faces methodological issues related to training on large web corpora.},
 booktitle = {Proceedings of the 34th International Conference on Neural Information Processing Systems},
 articleno = {159},
 numpages = {25},
-location = {Vancouver, BC, Canada},
-series = {NIPS '20}
-}
+location = {Vancouver, BC, Canada},}
 
 @inproceedings{Ashish2017attention,
 author = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N. and Kaiser, \L{}ukasz and Polosukhin, Illia},
@@ -36,8 +32,6 @@ author = {Carion, Nicolas and Massa, Francisco and Synnaeve, Gabriel and Usunier
 title = {End-to-End Object Detection with Transformers},
 year = {2020},
 isbn = {978-3-030-58451-1},
-publisher = {Springer-Verlag},
-address = {Berlin, Heidelberg},
 url = {https://doi.org/10.1007/978-3-030-58452-8_13},
 doi = {10.1007/978-3-030-58452-8_13},
 abstract = {We present a new method that views object detection as a direct set prediction problem. Our approach streamlines the detection pipeline, effectively removing the need for many hand-designed components like a non-maximum suppression procedure or anchor generation that explicitly encode our prior knowledge about the task. The main ingredients of the new framework, called DEtection TRansformer or DETR, are a set-based global loss that forces unique predictions via bipartite matching, and a transformer encoder-decoder architecture. Given a fixed small set of learned object queries, DETR reasons about the relations of the objects and the global image context to directly output the final set of predictions in parallel. The new model is conceptually simple and does not require a specialized library, unlike many other modern detectors. DETR demonstrates accuracy and run-time performance on par with the well-established and highly-optimized Faster R-CNN baseline on the challenging COCO object detection dataset. Moreover, DETR can be easily generalized to produce panoptic segmentation in a unified manner. We show that it significantly outperforms competitive baselines. Training code and pretrained models are available at .},
@@ -145,7 +139,6 @@ author = {Stevens, Jacob R. and Venkatesan, Rangharajan and Dai, Steve and Khail
 title = {Softermax: Hardware/Software Co-Design of an Efficient Softmax for Transformers},
 year = {2022},
 isbn = {9781665432740},
-publisher = {IEEE Press},
 url = {https://doi.org/10.1109/DAC18074.2021.9586134},
 doi = {10.1109/DAC18074.2021.9586134},
 abstract = {Transformers have transformed the field of natural language processing. Their superior performance is largely attributed to the use of stacked "self-attention" layers, each of which consists of matrix multiplies as well as softmax operations. As a result, unlike other neural networks, the softmax operation accounts for a significant fraction of the total run-time of Transformers. To address this, we propose Softermax, a hardware-friendly softmax design. Softermax consists of base replacement, low-precision softmax computations, and an online normalization calculation. We show Softermax results in 2.35x the energy efficiency at 0.90x the size of a comparable baseline, with negligible impact on network accuracy.},
@@ -153,23 +146,17 @@ booktitle = {Proceedings of the 58th Annual ACM/IEEE Design Automation Conferenc
 pages = {469-474},
 numpages = {6},
 keywords = {neural network accelerators, hardware/software codesign, transformers},
-location = {San Francisco, California, United States},
-series = {DAC '21}
-}
+location = {San Francisco, California, United States},}
 
 @inproceedings{li2022qvit,
 author = {Li, Yanjing and Xu, Sheng and Zhang, Baochang and Cao, Xianbin and Gao, Peng and Guo, Guodong},
 title = {Q-ViT: accurate and fully quantized low-bit vision transformer},
 year = {2022},
 isbn = {9781713871088},
-publisher = {Curran Associates Inc.},
-address = {Red Hook, NY, USA},
 booktitle = {Proceedings of the 36th International Conference on Neural Information Processing Systems},
 articleno = {2496},
 numpages = {13},
-location = {New Orleans, LA, USA},
-series = {NIPS '22}
-}
+location = {New Orleans, LA, USA},}
 
 @INPROCEEDINGS {he2022masked,
 author = { He, Kaiming and Chen, Xinlei and Xie, Saining and Li, Yanghao and Dollar, Piotr and Girshick, Ross },
@@ -183,8 +170,6 @@ abstract = { This paper shows that masked autoencoders (MAE) are scalable self-s
 keywords = {Training;Couplings;Computer vision;Computational modeling;Computer architecture;Data models;Pattern recognition},
 doi = {10.1109/CVPR52688.2022.01553},
 url = {https://doi.ieeecomputersociety.org/10.1109/CVPR52688.2022.01553},
-publisher = {IEEE Computer Society},
-address = {Los Alamitos, CA, USA},
 month =Jun}
 
 @INPROCEEDINGS{Hanrui2021SpAtten,
@@ -203,8 +188,6 @@ author = {Peng, Hongwu and Huang, Shaoyi and Chen, Shiyang and Li, Bingbing and 
 title = {A length adaptive algorithm-hardware co-design of transformer on FPGA through sparse attention and dynamic pipelining},
 year = {2022},
 isbn = {9781450391429},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA},
 url = {https://doi.org/10.1145/3489517.3530585},
 doi = {10.1145/3489517.3530585},
 abstract = {Transformers are considered one of the most important deep learning models since 2018, in part because it establishes state-of-the-art (SOTA) records and could potentially replace existing Deep Neural Networks (DNNs). Despite the remarkable triumphs, the prolonged turnaround time of Transformer models is a widely recognized roadblock. The variety of sequence lengths imposes additional computing overhead where inputs need to be zero-padded to the maximum sentence length in the batch to accommodate the parallel computing platforms. This paper targets the field-programmable gate array (FPGA) and proposes a coherent sequence length adaptive algorithm-hardware co-design for Transformer acceleration. Particularly, we develop a hardware-friendly sparse attention operator and a length-aware hardware resource scheduling algorithm. The proposed sparse attention operator brings the complexity of attention-based models down to linear complexity and alleviates the off-chip memory traffic. The proposed length-aware resource hardware scheduling algorithm dynamically allocates the hardware resources to fill up the pipeline slots and eliminates bubbles for NLP tasks. Experiments show that our design has very small accuracy loss and has 80.2 \texttimes{} and 2.6 \texttimes{} speedup compared to CPU and GPU implementation, and 4 \texttimes{} higher energy efficiency than state-of-the-art GPU accelerator optimized via CUBLAS GEMM.},
@@ -212,9 +195,7 @@ booktitle = {Proceedings of the 59th ACM/IEEE Design Automation Conference},
 pages = {1135-1140},
 numpages = {6},
 keywords = {BERT, FPGA, attention, length adaptive, transformer},
-location = {San Francisco, California},
-series = {DAC '22}
-}
+location = {San Francisco, California},}
 
 @INPROCEEDINGS{Kyungmin2021sparsevit,
   author={Kim, Kyungmin and Wu, Bichen and Dai, Xiaoliang and Zhang, Peizhao and Yan, Zhicheng and Vajda, Peter and Kim, Seon},
@@ -262,8 +243,6 @@ author = {Gustavson, Fred G.},
 title = {Two Fast Algorithms for Sparse Matrices: Multiplication and Permuted Transposition},
 year = {1978},
 issue_date = {Sept. 1978},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA},
 volume = {4},
 number = {3},
 issn = {0098-3500},
@@ -332,7 +311,6 @@ numpages = {16},
 @inproceedings{Hubara2021AcceleratedSparse,
  author = {Hubara, Itay and Chmiel, Brian and Island, Moshe and Banner, Ron and Naor, Joseph and Soudry, Daniel},
  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
- editor = {M. Ranzato and A. Beygelzimer and Y. Dauphin and P.S. Liang and J. Wortman Vaughan},
  pages = {21099--21111},
  title = {Accelerated Sparse Neural Training: A Provable and Efficient Method to Find N:M Transposable Masks},
  volume = {34},
@@ -358,7 +336,8 @@ pages = {1–6},
       eprint={1607.06450},
       archivePrefix={arXiv},
       primaryClass={stat.ML},
-      url={https://arxiv.org/abs/1607.06450}, 
+      url={https://arxiv.org/abs/1607.06450},
+      howpublished={arXiv:1607.06450}
 }
 
 @misc{kaplan2020scaling,
@@ -368,6 +347,7 @@ pages = {1–6},
       eprint={2001.08361},
       archivePrefix={arXiv},
       primaryClass={cs.LG},
+      howpublished={arXiv:2001.08361}
 }
 
 @article{Kung1982Systolic,
@@ -375,8 +355,6 @@ author = {Kung, H. T.},
 title = {{Why Systolic Architectures?}},
 year = {1982},
 issue_date = {January 1982},
-publisher = {IEEE Computer Society Press},
-address = {Washington, DC, USA},
 volume = {15},
 number = {1},
 issn = {0018-9162},
@@ -396,12 +374,7 @@ numpages = {10}
   booktitle = 	 {Proceedings of the 32nd International Conference on Machine Learning},
   pages = 	 {448--456},
   year = 	 {2015},
-  editor = 	 {Bach, Francis and Blei, David},
   volume = 	 {37},
-  series = 	 {Proceedings of Machine Learning Research},
-  address = 	 {Lille, France},
-  month = 	 {07--09 Jul},
-  publisher =    {PMLR},
   pdf = 	 {http://proceedings.mlr.press/v37/ioffe15.pdf},
   url = 	 {https://proceedings.mlr.press/v37/ioffe15.html},
   abstract = 	 {Training Deep Neural Networks is complicated by the fact that the distribution of each layer’s inputs changes during training, as the parameters of the previous layers change. This slows down the training by requiring lower learning rates and careful parameter initialization, and makes it notoriously hard to train models with saturating nonlinearities. We refer to this phenomenon as internal covariate shift, and address the problem by normalizing layer inputs. Our method draws its strength from making normalization a part of the model architecture and performing the normalization for each training mini-batch. Batch Normalization allows us to use much higher learning rates and be less careful about initialization, and in some cases eliminates the need for Dropout. Applied to a stateof-the-art image classification model, Batch Normalization achieves the same accuracy with 14 times fewer training steps, and beats the original model by a significant margin. Using an ensemble of batch-normalized networks, we improve upon the best published result on ImageNet classification: reaching 4.82% top-5 test error, exceeding the accuracy of human raters.}
@@ -428,17 +401,13 @@ author = {Volder, Jack},
 title = {The CORDIC computing technique},
 year = {1959},
 isbn = {9781450378659},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA},
 url = {https://doi.org/10.1145/1457838.1457886},
 doi = {10.1145/1457838.1457886},
 abstract = {The "Coordinate Rotation DIgital Computer" computing technique can be used to solve, in one computing operation and with equal speed, the relationships involved in plane coordinate rotation; conversion from rectangular to polar coordinates; multiplication; division; or the conversion between a binary - and a mixed-radix system.},
 booktitle = {Papers Presented at the March 3-5, 1959, Western Joint Computer Conference},
 pages = {257–261},
 numpages = {5},
-location = {San Francisco, California},
-series = {IRE-AIEE-ACM '59 (Western)}
-}
+location = {San Francisco, California},}
 
 @misc{hendrycks2023GELU,
       title={Gaussian Error Linear Units (GELUs)}, 
@@ -447,7 +416,8 @@ series = {IRE-AIEE-ACM '59 (Western)}
       eprint={1606.08415},
       archivePrefix={arXiv},
       primaryClass={cs.LG},
-      url={https://arxiv.org/abs/1606.08415}, 
+      url={https://arxiv.org/abs/1606.08415},
+      howpublished={arXiv:1606.08415}
 }
 
 @inproceedings{Tang2024QUEST,
@@ -500,9 +470,7 @@ numpages = {11},
  author = {Kuznedelev, Denis and Kurti\'{c}, Eldar and Frantar, Elias and Alistarh, Dan},
  booktitle = {Advances in Neural Information Processing Systems},
  doi = {10.52202/075280-1254},
- editor = {A. Oh and T. Naumann and A. Globerson and K. Saenko and M. Hardt and S. Levine},
  pages = {28805--28831},
- publisher = {Curran Associates, Inc.},
  title = {CAP:  Correlation-Aware Pruning for Highly-Accurate Sparse Vision Models},
  url = {https://proceedings.neurips.cc/paper_files/paper/2023/file/5bd9fbb3a5a985f80c16ddd0ec1dfc43-Paper-Conference.pdf},
  volume = {36},
@@ -531,10 +499,8 @@ numpages = {11},
 @inproceedings{Tang2022Mentha,
 author = {Tang, Minjin and Wen, Mei and Cao, Yasong and Shen, Junzhong and Yang, Jianchao and Fei, Jiawei and Guo, Yang and Liu, Sheng},
 title = {Mentha: Enabling Sparse-Packing Computation on Systolic Arrays},
-year = {2023},
+year = {2022},
 isbn = {9781450397339},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA},
 url = {https://doi.org/10.1145/3545008.3545053},
 doi = {10.1145/3545008.3545053},
 abstract = {Generalized Sparse Matrix-Matrix Multiplication (SpGEMM) is a critical kernel in domains like graph analytic and scientific computation. As a kind of classical special-purpose architecture, systolic arrays were first used for complex computing problems, e.g., matrix multiplication. However, classical systolic arrays are not efficient enough when handling sparse matrices due to the fact that the PEs containing zero-valued entries perform unnecessary operations that do not contribute to the result. Accordingly, in this paper, we propose Mentha, a framework that enables systolic arrays to accelerate sparse matrix computation by employing a sparse-packing algorithm suitable for various dataflow of systolic array. Firstly, Mentha supports both online and offline methods. By packing the rows or columns of the sparse matrix, the zero-valued items in the matrix are significantly reduced and the density of the matrix is improved. In addition, acceleration benefits can be obtained by the adaptation scheme even with limited resources. Moreover, we reconfigure PEs in systolic arrays at a low cost (1.28x in area, 1.21x in power) and find that our method outperforms TPU-like systolic arrays by 1.2~3.3x in terms of SpMM and 1.3~4.4x in terms of SpGEMM when dealing with moderately sparse matrices (sparsity < 0.9), while its performance is at least 9.7x better than cuSPARSE. Furthermore, experimental results show a FLOPs reduction of roughly 3.4x in the neural network.},
@@ -542,6 +508,8 @@ booktitle = {Proceedings of the 51st International Conference on Parallel Proces
 articleno = {18},
 numpages = {11},
 keywords = {matrix compression, sparse matrix multiplication, systolic arrays},
-location = {Bordeaux, France},
-series = {ICPP '22}
+location = {Bordeaux, France},}
+
+@IEEEtranBSTCTL{IEEEexample:BSTcontrol,
+  CTLuse_url = "no"
 }
